@@ -6,7 +6,7 @@
 #
 #    http://shiny.rstudio.com/
 #
-# add test
+
 library(shiny)
 library(openxlsx)
 library(ggplot2)
@@ -29,6 +29,7 @@ source("./script/gene_ex_co_shiny.r")
 source("./script/drive_gene_shiny.r")
 source("./script/circus_shiny.r")
 source("./script/CNV_shiny.r")
+source("./script/ori_mechine_learning.R")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -614,10 +615,89 @@ ui <- fluidPage(
 
 
                         )
-
-
-
+               ),
+               
+               
+               
+               tabPanel("Machine Learning",
+                        fluidRow(
+                          column(2,
+                                 # wellPanel(
+                                 #   h4(strong("Input your mutation file")),
+                                 #   selectInput("file1",label= "choose an example or your own data",
+                                 #               choices = c("Example"="Example1", "Your own data" = "load_my_own1")),
+                                 #   conditionalPanel("input.file1 == 'Example1'",
+                                 #                    downloadButton('downloadEx1', 'Download example')),
+                                 #   conditionalPanel("input.file1 == 'load_my_own1'",
+                                 #                    fileInput('file31', 'Choose xlsx File',
+                                 #                              accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt')))
+                                 #
+                                 # ),
+                                 #
+                                 wellPanel(
+                                   h4(strong("Input your file")),
+                                   selectInput("fileml2",label= "choose an example or your own data",
+                                               choices = c("Example"="Exampleml2", "Your own data" = "load_my_ownml2")),
+                                   conditionalPanel("input.fileml2 == 'Exampleml2'",
+                                                    downloadButton('downloadExml2', 'Download example')),
+                                   conditionalPanel("input.fileml2 == 'load_my_ownml2'",
+                                                    fileInput('fileml32', 'Choose xlsx File',
+                                                              accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt')))
+                                   
+                                 ),
+                                 
+                                 conditionalPanel("input.cPanelssession2 == 2",
+                                                  wellPanel(
+                                                    h4(strong("Machine learning")),
+                                                    selectInput("selectmethod", "Method",
+                                                                choices=c("Random Forest"="rf",
+                                                                          "Support Vector Machine"="svmLinear",
+                                                                          "Logistic Regression"="glm"
+                                                                ),
+                                                                multiple = F),
+                                                    selectInput("selectLabelcol", "label colname",
+                                                                choices=c("diabetes"),multiple = F),
+                                                    
+                                                    sliderInput("selectenCV", 
+                                                                label = "number of cross validation",
+                                                                min = 2, max = 20, value = 5, step = 1),
+                                                    
+                                                    sliderInput("selecteSplitData", 
+                                                                label = "Split data into training and testing sets",
+                                                                min = 0, max = 1, value = 0.8, step = 0.1),
+                                                    
+                                                    
+                                                    
+                                                  )),
+                                 
+                                 
+                                 conditionalPanel("input.cPanelssession2 == 2",
+                                                  h4(strong("Download")),
+                                                  wellPanel(
+                                                    textInput("fnameml", "filename", value = "MachineLearning"),
+                                                    downloadButton('DownloadMLplot', 'Download ML plot'),
+                                                    br(),
+                                                    br(),
+                                                    downloadButton('DownloadMLimportplot', 'Download ML Importantce plot')
+                                                  )),
+                                 
+                                 
+                          ),
+                          
+                          
+                          column(10,
+                                 tabsetPanel(
+                                   tabPanel("Manual", htmlOutput("ReadMe3"), value =1),
+                                   tabPanel("MechineLearning", htmlOutput("pvsessionML"), plotOutput("MLcmplot", height= 600, width =800), plotOutput("MLimportplot", height= 600, width = 800),value = 2),
+                                   
+                                   id = "cPanelssession2"
+                                 )
+                          ),
+                        )
                )
+               
+               
+               
     )
 )
 
@@ -750,12 +830,42 @@ server <- function(input, output, session) {
     }
   )
   
+  # machine learning
+  data_input5 <- reactive({
+    if(input$fileml2 == 'Exampleml2'){
+      d2 <- read.xlsx("./example/example_mechine_learning.xlsx")
+    }
+    else if(input$fileml2 == 'load_my_ownml2'){
+      inFile <- input$fileml32
+      if (is.null(inFile))
+        return(NULL)
+      else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = F) }
+      else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
+      else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
+    }
+    else 
+      return(NULL)
+    Dataset3 <- data.frame(d2)
+    return(as.data.frame(Dataset3))
+  })
   
   
+  output$downloadExml2 <- downloadHandler( 
+    filename <- function() {
+      paste0('Example_mechine_learning','.xlsx')
+    },
+    content <- function(file) {
+      ds2 <- data_input5()
+      write.xlsx(ds2, file)
+    }
+  )
+  
+
   observe({
     dsnames1 <- colnames(data_input1())
     dsnames2 <- colnames(data_input2())
     dsnames4 <- colnames(data_input4())
+    dsnames5 <- colnames(data_input5())
     
     genelist <- unique(data_input1()[["GENE"]])
     nsample <- length(unique(data_input1()[["ORDER_ID"]]))
@@ -886,6 +996,11 @@ server <- function(input, output, session) {
     updateSelectInput(session, "selectMultivariate", label = "Multivariate",
                       choices = dsnames4,
                       selected = c("Age", "gender","Mutation","pathologic_stage"))
+    
+    # mechine learning
+    updateSelectInput(session, "selectLabelcol", label = "label colname",
+                      choices = dsnames5,
+                      selected = c("diabetes"))
     
     
   })
@@ -1546,6 +1661,64 @@ server <- function(input, output, session) {
       dev.off()
      # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
     },contentType = 'image/pdf')
+
+  ## machine learning
+  
+  output$MLcmplot <- renderPlot({
+    data5 <- data_input5()
+    ori_ml(data5, 
+           SplitData=input$selecteSplitData,
+           Method=input$selectmethod,
+           Labelcol=input$selectLabelcol,
+           nCrossValidation=input$selectenCV,
+           Plotimportant=F,Plotcm=T)
+  })
+  
+  output$DownloadMLplot <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnameml)
+      paste(pdf_file,'.pdf', sep='')
+    },
+    content <- function(file) {
+      pdf(file , height= 10, width=12,onefile = FALSE)
+      data5 <- data_input5()
+      ori_ml(data5,SplitData=input$selecteSplitData,
+             Method=input$selectmethod,
+             Labelcol=input$selectLabelcol,
+             nCrossValidation=input$selectenCV,
+             Plotimportant=F,Plotcm=T)
+      dev.off()
+      # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
+    },contentType = 'image/pdf')
+  
+  
+  output$MLimportplot <- renderPlot({
+    data5 <- data_input5()
+    ori_ml(data5,SplitData=input$selecteSplitData,
+           Method=input$selectmethod,
+           Labelcol=input$selectLabelcol,
+           nCrossValidation=input$selectenCV,
+           Plotimportant=T,Plotcm=F)
+  })
+  
+  output$DownloadMLimportplot <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnameml)
+      paste(pdf_file,'_importance.pdf', sep='')
+    },
+    content <- function(file) {
+      pdf(file , height= 10, width=12,onefile = FALSE)
+      data5 <- data_input5()
+      ori_ml(data5,SplitData=input$selecteSplitData,
+             Method=input$selectmethod,
+             Labelcol=input$selectLabelcol,
+             nCrossValidation=input$selectenCV,
+             Plotimportant=T,Plotcm=F)
+      dev.off()
+      # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
+    },contentType = 'image/pdf')
+  
+  
   
   
   ## ReadMe
