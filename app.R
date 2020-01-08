@@ -34,7 +34,7 @@ source("./script/ori_mechine_learning.R")
 # Define UI for application 
 ui <- fluidPage(
     theme = shinytheme('cerulean'),
-    navbarPage("Pipeline", 
+    navbarPage("Himalaya 1.0", 
                
                tabPanel("Mutation",
                         fluidRow(
@@ -652,7 +652,10 @@ ui <- fluidPage(
                                                     selectInput("selectmethod", "Method",
                                                                 choices=c("Random Forest"="rf",
                                                                           "Support Vector Machine"="svmLinear",
-                                                                          "Logistic Regression"="glm"
+                                                                          "Logistic Regression"="glm",
+                                                                          "Naive Bayes"="nb",
+                                                                          "k-Nearest Neighbors"="knn",
+                                                                          "Decision Tree"="rpart"
                                                                 ),
                                                                 multiple = F),
                                                     selectInput("selectLabelcol", "label colname",
