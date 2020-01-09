@@ -30,6 +30,7 @@ source("./script/drive_gene_shiny.r")
 source("./script/circus_shiny.r")
 source("./script/CNV_shiny.r")
 source("./script/ori_mechine_learning.R")
+source("./script/xCell.R")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -697,10 +698,109 @@ ui <- fluidPage(
                                  )
                           ),
                         )
+               ),
+               tabPanel("Expression",
+                        fluidRow(
+                          column(2,
+                                 # wellPanel(
+                                 #   h4(strong("Input your mutation file")),
+                                 #   selectInput("file1",label= "choose an example or your own data",
+                                 #               choices = c("Example"="Example1", "Your own data" = "load_my_own1")),
+                                 #   conditionalPanel("input.file1 == 'Example1'",
+                                 #                    downloadButton('downloadEx1', 'Download example')),
+                                 #   conditionalPanel("input.file1 == 'load_my_own1'",
+                                 #                    fileInput('file31', 'Choose xlsx File',
+                                 #                              accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt')))
+                                 #
+                                 # ),
+                                 #
+                                 wellPanel(
+                                   h4(strong("Input your file")),
+                                   selectInput("fileex2",label= "choose an example or your own data",
+                                               choices = c("Example"="Exampleex2", "Your own data" = "load_my_ownex2")),
+                                   conditionalPanel("input.fileex2 == 'Exampleex2'",
+                                                    downloadButton('downloadExex2', 'Download example')),
+                                   conditionalPanel("input.fileex2 == 'load_my_ownex2'",
+                                                    fileInput('fileex32', 'Choose xlsx File',
+                                                              accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt')))
+                                   
+                                 ),
+                                 
+                                 conditionalPanel("input.cPanelssession3 == 2",
+                                                  wellPanel(
+                                                    h4(strong("xCell")),
+                                                    h5("This may take some time"),
+                                                    selectInput("selectsig", "Choose gene signatures",
+                                                                choices=c("xCell(N=64)"),multiple = F),
+                                                  )),
+                                 
+                                 
+                                 conditionalPanel("input.cPanelssession3 == 2",
+                                                  h4(strong("Download")),
+                                                  wellPanel(
+                                                    textInput("fnamexcell", "filename", value = "xCell"),
+                                                    downloadButton('Downloadxcell', 'Download xCell table'),
+                                                    
+                                                  )),
+                                 
+                                 conditionalPanel("input.cPanelssession3 == 3",
+                                                  wellPanel(
+                                                    h4(strong("ssGSEA")),
+                                                    h5("This may take some time"),
+                                                    selectInput("selectssGSEAgs", "Choose gene sets",
+                                                                choices=c("MsigDB.c2.cp.v6.2.symbols.gmt"),multiple = F),
+                                                  )),
+                                 
+                                 conditionalPanel("input.cPanelssession3 == 3",
+                                                  h4(strong("Download")),
+                                                  wellPanel(
+                                                    textInput("fnamessGSEA", "filename", value = "ssGSEA"),
+                                                    downloadButton('DownloadssGSEA', 'Download ssGSEA table'),
+                                                    
+                                                  )),
+                                 
+                                 
+                                 conditionalPanel("input.cPanelssession3 == 4",
+                                                  wellPanel(
+                                                    h4(strong("Correlation")),
+                                                    selectInput("selectscol1", "Choose x axis",
+                                                                choices=c("A1BG"),multiple = F),
+                                                    selectInput("selectscol2", "Choose y axis",
+                                                                choices=c("A1CF"),multiple = F),
+                                                    selectInput("selectscormethod", "Choose method",
+                                                                choices=c("pearson","spearman","kendall"),
+                                                                selected = "pearson",
+                                                                multiple = F),
+                                                  )),
+                                 
+                                 conditionalPanel("input.cPanelssession3 == 4",
+                                                  h4(strong("Download")),
+                                                  wellPanel(
+                                                    textInput("fnamecorrelation", "filename", value = "correlation"),
+                                                    downloadButton('Downloadcorrelation', 'Download correlation plot'),
+                                                    
+                                                  )),
+                                 
+                                 
+                                 
+                                 
+                          ),
+                          
+                          
+                          column(10,
+                                 tabsetPanel(
+                                   tabPanel("Manual", htmlOutput("ReadMe4"), value =1),
+                                   tabPanel("xCell", htmlOutput("pvsessionxcell"), DT::dataTableOutput("xcell",width = 1200),value = 2),
+                                   tabPanel("ssGSEA", htmlOutput("pvsessionssGSEA"), DT::dataTableOutput("ssGSEA",width = 1200),value = 3),
+                                   tabPanel("Correlation", htmlOutput("pvsessionCorrelation"), plotOutput("correlation", height= 800, width = 1000), value = 4),
+                                   
+                                   id = "cPanelssession3"
+                                 )
+                          ),
+                        )
                )
                
-               
-               
+       
     )
 )
 
@@ -863,12 +963,42 @@ server <- function(input, output, session) {
     }
   )
   
+  # Expression
+  data_input6 <- reactive({
+    if(input$fileex2 == 'Exampleex2'){
+      d2 <- read.xlsx("./example/example_expression.xlsx",rowNames = T)
+    }
+    else if(input$fileex2 == 'load_my_ownex2'){
+      inFile <- input$fileex32
+      if (is.null(inFile))
+        return(NULL)
+      else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = F) }
+      else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
+      else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
+    }
+    else 
+      return(NULL)
+    Dataset3 <- data.frame(d2)
+    return(as.data.frame(Dataset3))
+  })
+  
+  output$downloadExex2 <- downloadHandler( 
+    filename <- function() {
+      paste0('Example_expression','.xlsx')
+    },
+    content <- function(file) {
+      ds2 <- data_input6()
+      write.xlsx(ds2, file,rowNames=T)
+    }
+  )
+  
 
   observe({
     dsnames1 <- colnames(data_input1())
     dsnames2 <- colnames(data_input2())
     dsnames4 <- colnames(data_input4())
     dsnames5 <- colnames(data_input5())
+    dsnames6 <- rownames(data_input6())
     
     genelist <- unique(data_input1()[["GENE"]])
     nsample <- length(unique(data_input1()[["ORDER_ID"]]))
@@ -1005,6 +1135,13 @@ server <- function(input, output, session) {
                       choices = dsnames5,
                       selected = c("diabetes"))
     
+    # correlation
+    updateSelectInput(session, "selectscol1", label = "Choose x axis",
+                      choices = dsnames6,
+                      selected = c("A1BG"))
+    updateSelectInput(session, "selectscol2", label = "Choose y axis",
+                      choices = dsnames6,
+                      selected = c("A1CF"))
     
   })
   
@@ -1721,9 +1858,81 @@ server <- function(input, output, session) {
       # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
     },contentType = 'image/pdf')
   
+  #xCell
+  output$xcell <- renderDataTable({
+    data6 <- data_input6()
+    res_table<-xCellAnalysis(data6)
+    #print(res_table)
+  })
   
+  output$Downloadxcell <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnamexcell)
+      paste(pdf_file,'.xlsx', sep='')
+    },
+    content <- function(file) {
+      data6 <- data_input6()
+      res_table<- xCellAnalysis(data6)
+      write.xlsx(res_table,file,rowNames =T)
+    }
+  )
   
+  # ssGSEA
+  output$ssGSEA <- renderDataTable({
+    data6 <- data_input6()
+    data61 <- as.matrix(data6)
+    gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
+    res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
+                          ssgsea.norm=F,
+                          verbose = TRUE)
+    #print(res_table)
+  })
   
+  output$DownloadssGSEA <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnamessGSEA)
+      paste(pdf_file,'.xlsx', sep='')
+    },
+    content <- function(file) {
+      data6 <- data_input6()
+      data61 <- as.matrix(data6)
+      gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
+      res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
+                            ssgsea.norm=F,
+                            verbose = TRUE)
+      write.xlsx(res_table,file,rowNames =T)
+    }
+  )
+  
+  # correlation
+  output$correlation <- renderPlot({
+    data6 <- data_input6()
+    data6.1 <- as.data.frame(t(data6))
+    res_pic <- ori_scattercor_plot(data6.1,
+                                   x=input$selectscol1,
+                                   y=input$selectscol2,
+                                   method=input$selectscormethod)
+    print(res_pic)
+  })
+  
+  output$Downloadcorrelation <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnamecorrelation)
+      paste(pdf_file,'.pdf', sep='')
+    },
+    content <- function(file) {
+      pdf(file , height= 10, width=12,onefile = FALSE)
+      data6 <- data_input6()
+      data6.1 <- as.data.frame(t(data6))
+      ori_scattercor_plot(data6.1,
+                          x=input$selectscol1,
+                          y=input$selectscol2,
+                          method=input$selectscormethod)
+      dev.off()
+      # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
+    },contentType = 'image/pdf')
+  
+
   ## ReadMe
   output$ReadMe1 <- renderUI({
     str00 <- paste("&emsp;")
