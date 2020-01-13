@@ -31,6 +31,8 @@ source("./script/circus_shiny.r")
 source("./script/CNV_shiny.r")
 source("./script/ori_mechine_learning.R")
 source("./script/xCell.R")
+source("./script/ori_scattercor_plot.R")
+source("./script/ori_heatmap.R")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -66,50 +68,54 @@ ui <- fluidPage(
                                    
                                    conditionalPanel("input.cPanels1 == 2",
                                                     wellPanel(
-                                                        h4(strong("Profiling")),
-                                                        
-                                                        selectInput("select01", "Divided into two subgroups", 
-                                                                   choices=c("TMB"),multiple = F),
-                                                        selectInput("select11", "Choose clinical feature", 
-                                                                    choices=c("GENDER"),multiple = T),
-                                                        
-                                                        selectInput("selectwaterfall", "show the waterfall", 
-                                                                    choices=c("YES"=TRUE,"NO"=FALSE),multiple = F,
-                                                                    selected = FALSE),
-                                                        
-                                                        selectInput("selectquickplot", "quick plot", 
-                                                                    choices=c("YES"=TRUE,"NO"=FALSE),multiple = F,
-                                                                    selected = FALSE),
-
-                                                        selectInput("selectchangecolor", "change the color of legend", 
-                                                                    choices=c("YES"=TRUE,"NO"=FALSE),multiple = F,
-                                                                    selected = FALSE),
-                                                        actionButton("refresh", "Refresh"),
-                                                        selectInput("select21", "Show the pathway", 
-                                                                    choices = c("NO" = "NO","YES"="YES")
-                                                                    ),
-                                                        conditionalPanel("input.select21 == 'YES'",
-                                                                         selectInput("file3",label= "choose an example or your own data", 
-                                                                                     choices = c("Example"="Example3", "Your own data" = "load_my_own3")),
-                                                                         conditionalPanel("input.file3 == 'Example3'",
-                                                                                          downloadButton('downloadEx3', 'Download example')),
-                                                                         conditionalPanel("input.file3 == 'load_my_own3'",
-                                                                                          fileInput('file33', 'Choose xlsx File', 
-                                                                                                    accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt'))
-                                                   
-                                                                         )
-                                                                         ),
-                                                                         
-                                                       #radioButtons("pathway", "Show the pathway", choices = c("Yes" = "Yes", "No" = "NO"), selected = "NO"),
-                                                        
-    
-                                                        sliderInput("number", 
-                                                                    label = "The number of first top mutant genes:",
-                                                                    min = 10, max = 100, value = 30, step = 1
-                                                                    )
-                                                        #textInput("prefix", "filename"),
-                                                        
-                                                        # hr()                                
+                                                      h4(strong("Profiling")),
+                                                      
+                                                      selectInput("select01", "Divided into two subgroups", 
+                                                                  choices=c("TMB"),multiple = F),
+                                                      selectInput("select11", "Choose clinical feature", 
+                                                                  choices=c("GENDER"),multiple = T),
+                                                      sliderInput("number", 
+                                                                  label = "The number of first top mutant genes:",
+                                                                  min = 10, max = 100, value = 30, step = 1
+                                                      ),
+                                                      
+                                                      selectInput("selectwaterfall", "show the waterfall", 
+                                                                  choices=c("YES"=TRUE,"NO"=FALSE),multiple = F,
+                                                                  selected = FALSE),
+                                                      
+                                                      selectInput("selectquickplot", "quick plot", 
+                                                                  choices=c("YES"=TRUE,"NO"=FALSE),multiple = F,
+                                                                  selected = FALSE),
+                                                      
+                                                      selectInput("selectchangecolor", "change the color of legend", 
+                                                                  choices=c("YES"=TRUE,"NO"=FALSE),multiple = F,
+                                                                  selected = FALSE),
+                                                      actionButton("refresh", "Refresh"),
+                                                      selectInput("select21", "Show the pathway", 
+                                                                  choices = c("NO" = "NO","YES"="YES")
+                                                      ),
+                                                      conditionalPanel("input.select21 == 'YES'",
+                                                                       selectInput("file3",label= "choose an example or your own data", 
+                                                                                   choices = c("Example"="Example3", "Your own data" = "load_my_own3")),
+                                                                       conditionalPanel("input.file3 == 'Example3'",
+                                                                                        downloadButton('downloadEx3', 'Download example')),
+                                                                       conditionalPanel("input.file3 == 'load_my_own3'",
+                                                                                        fileInput('file33', 'Choose xlsx File', 
+                                                                                                  accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt'))
+                                                                                        
+                                                                       )
+                                                      ),
+                                                      
+                                                      #radioButtons("pathway", "Show the pathway", choices = c("Yes" = "Yes", "No" = "NO"), selected = "NO"),
+                                                      
+                                                      
+                                                      sliderInput("nfreq", 
+                                                                  label = "The mutation frequency of signal pathway",
+                                                                  min = 0, max = 0.1, value = 0.02, step = 0.01
+                                                      )
+                                                      #textInput("prefix", "filename"),
+                                                      
+                                                      # hr()                                
                                                     )),
                                    
                                    conditionalPanel("input.cPanels1 == 2",
@@ -782,8 +788,78 @@ ui <- fluidPage(
                                                   )),
                                  
                                  
+                                 conditionalPanel("input.cPanelssession3 == 5",
+                                                  wellPanel(
+                                                    h4(strong("Heatmap")),
+                                                    #checkboxInput("selectcluster_rows",
+                                                    #              "cluster rows", TRUE),
+                                                    
+                                                    #checkboxInput("somevalue", "Some value", FALSE),
+                                                    # selectInput("selectshow_column_names", "show column names", 
+                                                    #            choices=c("YES"=T,"NO"=F),multiple = F,
+                                                    #           selected = T),
+                                                   # selectInput("selectshow_row_names", "show row names", 
+                                                    #            choices=c("YES"=T,"NO"=F),multiple = F,
+                                                    #            selected = F),
+                                                    
+                                                    #selectInput("selectcluster_columns", "cluster columns", 
+                                                    #            choices=c("YES"=T,"NO"=F),multiple = F,
+                                                     #           selected = T),
+                                                    
+                                                    #selectInput("selectcluster_rows", "cluster rows", 
+                                                    #            choices=c("YES"=T,"NO"=F),multiple = F,
+                                                    #            selected = T),
+                                                    
+                                                   selectInput("selectexchangecolor", "change the color of legend", 
+                                                                choices=c("YES"=T,"NO"=F),multiple = F,
+                                                                selected = F),
+                                                   checkboxInput("selectshow_column_names", 
+                                                                 "show column names", TRUE),
+                                                   checkboxInput("selectshow_row_names", 
+                                                                 "show row names", FALSE),
+                                                   checkboxInput("selectcluster_columns", 
+                                                                 "cluster columns", TRUE),
+                                                   # if the argument(cluster_rows)is added ,an error will be report.
+                                                   selectInput("selectupgenelist", "Upload the genelist", 
+                                                                choices = c("NO" = "NO","YES"="YES")
+                                                    ),
+                                                    conditionalPanel("input.selectupgenelist == 'YES'",
+                                                                     selectInput("filegenelist",label= "choose an example or your own data", 
+                                                                                 choices = c("Example"="Examplegenelist", "Your own data" = "load_my_owngenelist")),
+                                                                     conditionalPanel("input.filegenelist == 'Examplegenelist'",
+                                                                                      downloadButton('downloadgenelist', 'Download example')),
+                                                                     conditionalPanel("input.filegenelist == 'load_my_owngenelist'",
+                                                                                      fileInput('filegenelist7', 'Choose xlsx File', 
+                                                                                                accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt'))
+                                                                                      
+                                                                     )
+                                                    ),
+                                                    selectInput("selectupexprinfo", "Upload the sample info", 
+                                                                choices = c("NO" = "NO","YES"="YES")
+                                                    ),
+                                                    conditionalPanel("input.selectupexprinfo == 'YES'",
+                                                                     selectInput("fileexprinfo",label= "choose an example or your own data", 
+                                                                                 choices = c("Example"="Exampleexprinfo", "Your own data" = "load_my_ownexprinfo")),
+                                                                     conditionalPanel("input.fileexprinfo == 'Exampleexprinfo'",
+                                                                                      downloadButton('downloadexprinfo', 'Download example')),
+                                                                     conditionalPanel("input.fileexprinfo == 'load_my_ownexprinfo'",
+                                                                                      fileInput('fileexprinfo8', 'Choose xlsx File', 
+                                                                                                accept=c('.xlsx','text/csv', 'text/comma-separated-values,text/plain', '.csv', '.txt'))
+                                                                                      
+                                                                     )
+                                                    ),
+                                                
+                                                    actionButton("refreshexpre", "Refresh"),
+                                                    
+                                                  )),
                                  
-                                 
+                                 conditionalPanel("input.cPanelssession3 == 5",
+                                                  h4(strong("Download")),
+                                                  wellPanel(
+                                                    textInput("fnameheatmap", "filename", value = "heatmap"),
+                                                    downloadButton('Downloadheatmap', 'Download heatmap')
+                                                  )),
+               
                           ),
                           
                           
@@ -793,6 +869,8 @@ ui <- fluidPage(
                                    tabPanel("xCell", htmlOutput("pvsessionxcell"), DT::dataTableOutput("xcell",width = 1200),value = 2),
                                    tabPanel("ssGSEA", htmlOutput("pvsessionssGSEA"), DT::dataTableOutput("ssGSEA",width = 1200),value = 3),
                                    tabPanel("Correlation", htmlOutput("pvsessionCorrelation"), plotOutput("correlation", height= 800, width = 1000), value = 4),
+                                   tabPanel("Heatmap", htmlOutput("pvsessionHeatmap"), plotOutput("heatmap", height= 800, width = 1000), value = 5),
+                                   
                                    
                                    id = "cPanelssession3"
                                  )
@@ -992,6 +1070,64 @@ server <- function(input, output, session) {
     }
   )
   
+  # genelist 
+  data_input7 <- reactive({
+    if(input$filegenelist == 'Examplegenelist'){
+      d2 <- read.xlsx("./example/genelist.xlsx")
+    }
+    else if(input$filegenelist == 'load_my_owngenelist'){
+      inFile <- input$filegenelist7
+      if (is.null(inFile))
+        return(NULL)
+      else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = F) }
+      else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
+      else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
+    }
+    else 
+      return(NULL)
+    Dataset3 <- data.frame(d2)
+    return(as.data.frame(Dataset3))
+  })
+  
+  output$downloadgenelist <- downloadHandler( 
+    filename <- function() {
+      paste0('Example_expression_genelist','.xlsx')
+    },
+    content <- function(file) {
+      ds2 <- data_input7()
+      write.xlsx(ds2, file)
+    }
+  )
+  
+  # expression info
+  data_input8 <- reactive({
+    if(input$fileexprinfo == 'Exampleexprinfo'){
+      d2 <- read.xlsx("./example/example_expression_info.xlsx",rowNames = T)
+    }
+    else if(input$fileexprinfo == 'load_my_ownexprinfo'){
+      inFile <- input$fileexprinfo8
+      if (is.null(inFile))
+        return(NULL)
+      else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = T) }
+      else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
+      else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
+    }
+    else 
+      return(NULL)
+    Dataset3 <- data.frame(d2)
+    return(as.data.frame(Dataset3))
+  })
+  
+  output$downloadexprinfo <- downloadHandler( 
+    filename <- function() {
+      paste0('Example_expression_info','.xlsx')
+    },
+    content <- function(file) {
+      ds2 <- data_input8()
+      write.xlsx(ds2, file)
+    }
+  )
+  
 
   observe({
     dsnames1 <- colnames(data_input1())
@@ -1164,7 +1300,7 @@ server <- function(input, output, session) {
                                   feature=input$select11,
                                   prefix=input$fname22,
                                   pathway_genes = data3,
-                                  nfreq=0.03,
+                                  nfreq=input$nfreq,
                                   resam = input$selectchangecolor,
                                   quickplot = input$selectquickplot,
                                   waterfall = input$selectwaterfall
@@ -1928,6 +2064,43 @@ server <- function(input, output, session) {
                           x=input$selectscol1,
                           y=input$selectscol2,
                           method=input$selectscormethod)
+      dev.off()
+      # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
+    },contentType = 'image/pdf')
+  
+  # Heatmap
+  Heatmapforuse <- function(){
+    expr <- data_input6() 
+    genelist <- data_input7()
+    info <- data_input8()
+    p <- ori_heatmap(expr=expr,
+                     cli = info,
+                     genelist = genelist,
+                     resam=input$selectexchangecolor,
+                     show_column_names=input$selectshow_column_names,
+                     show_row_names=input$selectshow_row_names,
+                     cluster_columns=input$selectcluster_columns,
+                     #cluster_rows=input$selectcluster_rows,
+                     
+    )
+    print(p)
+    
+  }
+  
+  output$heatmap <- renderPlot({
+    input$refreshexpre
+    isolate(Heatmapforuse())
+    
+  })
+  
+  output$Downloadheatmap <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnameheatmap)
+      paste(pdf_file,'.pdf', sep='')
+    },
+    content <- function(file) {
+      pdf(file , height= 10, width=12,onefile = FALSE)
+      Heatmapforuse()
       dev.off()
       # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
     },contentType = 'image/pdf')

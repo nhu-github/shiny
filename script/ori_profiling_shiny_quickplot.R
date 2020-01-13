@@ -237,7 +237,7 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
 
 
 plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix, 
-                            pathway_genes, quickplot=F , waterfall=F, resam=F, nfreq=0.03, cutoff=NULL){
+                            pathway_genes, quickplot=F , waterfall=F, resam=F, nfreq=0.01, cutoff=NULL){
   ## cli
   oncocol <- c("Substitution/Indel" = "#228B22",        ##green
                "Gene Amplification" = "#EE0000",        ##red
@@ -314,6 +314,9 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
     mut = data.table::dcast(mut, ORDER_ID~GENE, fun.aggregate = function(x){paste(x, collapse = ";")})
     rownames(mut) = mut$ORDER_ID
     mut[setdiff(all_sn, mut$ORDER_ID), ] = ""
+    # add cli,Note the purpose of this step
+    mut[setdiff(rownames(HA$annoInfo), mut$ORDER_ID), ] = ""
+    
     mut = base::t(mut[,-1])
     mut =  mut[, match(rownames(HA$annoInfo), colnames(mut))]
     
