@@ -33,10 +33,14 @@ source("./script/ori_mechine_learning.R")
 source("./script/xCell.R")
 source("./script/ori_scattercor_plot.R")
 source("./script/ori_heatmap.R")
+source("./script/CIBERSORT.R")
 
 # Define UI for application 
 ui <- fluidPage(
-    theme = shinytheme('cerulean'),
+  
+  theme = shinytheme('cerulean'),
+    #shinythemes::themeSelector()
+    #theme = shinytheme('sandstone'),
     navbarPage("Himalaya 1.0", 
                
                tabPanel("Mutation",
@@ -732,6 +736,7 @@ ui <- fluidPage(
                                    
                                  ),
                                  
+                                 #xCell
                                  conditionalPanel("input.cPanelssession3 == 2",
                                                   wellPanel(
                                                     h4(strong("xCell")),
@@ -739,17 +744,35 @@ ui <- fluidPage(
                                                     selectInput("selectsig", "Choose gene signatures",
                                                                 choices=c("xCell(N=64)"),multiple = F),
                                                   )),
-                                 
-                                 
+
+
                                  conditionalPanel("input.cPanelssession3 == 2",
                                                   h4(strong("Download")),
                                                   wellPanel(
                                                     textInput("fnamexcell", "filename", value = "xCell"),
                                                     downloadButton('Downloadxcell', 'Download xCell table'),
-                                                    
+
                                                   )),
                                  
+                                 # cibersort
                                  conditionalPanel("input.cPanelssession3 == 3",
+                                                  wellPanel(
+                                                    h4(strong("Cibersort")),
+                                                    h5("This may take some time"),
+                                                    selectInput("selectmixture_file", "Choose mixture file",
+                                                                choices=c("LM22"),multiple = F),
+                                                  )),
+
+                                 conditionalPanel("input.cPanelssession3 == 3",
+                                                  h4(strong("Download")),
+                                                  wellPanel(
+                                                    textInput("fnamexcibersort", "filename", value = "cibersort"),
+                                                    downloadButton('Downloadcibersort', 'Download cibersort table'),
+
+                                                  )),
+                                 
+
+                                 conditionalPanel("input.cPanelssession3 == 4",
                                                   wellPanel(
                                                     h4(strong("ssGSEA")),
                                                     h5("This may take some time"),
@@ -757,7 +780,7 @@ ui <- fluidPage(
                                                                 choices=c("MsigDB.c2.cp.v6.2.symbols.gmt"),multiple = F),
                                                   )),
                                  
-                                 conditionalPanel("input.cPanelssession3 == 3",
+                                 conditionalPanel("input.cPanelssession3 == 4",
                                                   h4(strong("Download")),
                                                   wellPanel(
                                                     textInput("fnamessGSEA", "filename", value = "ssGSEA"),
@@ -766,7 +789,7 @@ ui <- fluidPage(
                                                   )),
                                  
                                  
-                                 conditionalPanel("input.cPanelssession3 == 4",
+                                 conditionalPanel("input.cPanelssession3 == 5",
                                                   wellPanel(
                                                     h4(strong("Correlation")),
                                                     selectInput("selectscol1", "Choose x axis",
@@ -779,7 +802,7 @@ ui <- fluidPage(
                                                                 multiple = F),
                                                   )),
                                  
-                                 conditionalPanel("input.cPanelssession3 == 4",
+                                 conditionalPanel("input.cPanelssession3 == 5",
                                                   h4(strong("Download")),
                                                   wellPanel(
                                                     textInput("fnamecorrelation", "filename", value = "correlation"),
@@ -788,7 +811,7 @@ ui <- fluidPage(
                                                   )),
                                  
                                  
-                                 conditionalPanel("input.cPanelssession3 == 5",
+                                 conditionalPanel("input.cPanelssession3 == 6",
                                                   wellPanel(
                                                     h4(strong("Heatmap")),
                                                     #checkboxInput("selectcluster_rows",
@@ -853,7 +876,7 @@ ui <- fluidPage(
                                                     
                                                   )),
                                  
-                                 conditionalPanel("input.cPanelssession3 == 5",
+                                 conditionalPanel("input.cPanelssession3 == 6",
                                                   h4(strong("Download")),
                                                   wellPanel(
                                                     textInput("fnameheatmap", "filename", value = "heatmap"),
@@ -867,10 +890,10 @@ ui <- fluidPage(
                                  tabsetPanel(
                                    tabPanel("Manual", htmlOutput("ReadMe4"), value =1),
                                    tabPanel("xCell", htmlOutput("pvsessionxcell"), DT::dataTableOutput("xcell",width = 1200),value = 2),
-                                   tabPanel("ssGSEA", htmlOutput("pvsessionssGSEA"), DT::dataTableOutput("ssGSEA",width = 1200),value = 3),
-                                   tabPanel("Correlation", htmlOutput("pvsessionCorrelation"), plotOutput("correlation", height= 800, width = 1000), value = 4),
-                                   tabPanel("Heatmap", htmlOutput("pvsessionHeatmap"), plotOutput("heatmap", height= 800, width = 1000), value = 5),
-                                   
+                                   tabPanel("Cibersort", htmlOutput("pvsessioncibersort"), DT::dataTableOutput("cibersort",width = 1200),value = 3),
+                                   tabPanel("ssGSEA", htmlOutput("pvsessionssGSEA"), DT::dataTableOutput("ssGSEA",width = 1200),value = 4),
+                                   tabPanel("Correlation", htmlOutput("pvsessionCorrelation"), plotOutput("correlation", height= 800, width = 1000), value = 5),
+                                   tabPanel("Heatmap", htmlOutput("pvsessionHeatmap"), plotOutput("heatmap", height= 800, width = 1000), value = 6),
                                    
                                    id = "cPanelssession3"
                                  )
@@ -1050,7 +1073,7 @@ server <- function(input, output, session) {
       inFile <- input$fileex32
       if (is.null(inFile))
         return(NULL)
-      else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = F) }
+      else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = T) }
       else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
       else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
     }
@@ -1995,9 +2018,15 @@ server <- function(input, output, session) {
     },contentType = 'image/pdf')
   
   #xCell
-  output$xcell <- renderDataTable({
+  xcellresult <- reactive({
     data6 <- data_input6()
     res_table<-xCellAnalysis(data6)
+    return(res_table)
+    
+  })
+  
+  output$xcell <- renderDataTable({
+    res_table <- xcellresult()
     #print(res_table)
   })
   
@@ -2007,20 +2036,84 @@ server <- function(input, output, session) {
       paste(pdf_file,'.xlsx', sep='')
     },
     content <- function(file) {
-      data6 <- data_input6()
-      res_table<- xCellAnalysis(data6)
+      res_table <- xcellresult()
       write.xlsx(res_table,file,rowNames =T)
     }
   )
   
+  
+  # output$xcell <- renderDataTable({
+  #   data6 <- data_input6()
+  #   res_table<-xCellAnalysis(data6)
+  #   #print(res_table)
+  # })
+  # 
+  # output$Downloadxcell <- downloadHandler(
+  #   filename <- function() {
+  #     pdf_file <<- as.character(input$fnamexcell)
+  #     paste(pdf_file,'.xlsx', sep='')
+  #   },
+  #   content <- function(file) {
+  #     data6 <- data_input6()
+  #     res_table<- xCellAnalysis(data6)
+  #     write.xlsx(res_table,file,rowNames =T)
+  #   }
+  # )
+  
+  #cibersort
+  cibersortresult <- reactive({
+    data6 <- data_input6()
+    res_table <- CIBERSORT(data6,"./data/LM22.txt", perm = 200, absolute = F)
+    
+  })
+  
+  output$cibersort <- renderDataTable({
+    res_table <- cibersortresult()
+    #print(res_table)
+  })
+  
+  output$Downloadcibersort <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnamexcibersort)
+      paste(pdf_file,'.xlsx', sep='')
+    },
+    content <- function(file) {
+      res_table <- cibersortresult()
+      write.xlsx(res_table,file,rowNames =T)
+    }
+  )
+  
+
+  # output$cibersort <- renderDataTable({
+  #   data6 <- data_input6()
+  #   res_table <- CIBERSORT(data6,"./data/LM22.txt", perm = 200, absolute = F)
+  #   #print(res_table)
+  # })
+  # 
+  # output$Downloadcibersort <- downloadHandler(
+  #   filename <- function() {
+  #     pdf_file <<- as.character(input$fnamexcibersort)
+  #     paste(pdf_file,'.xlsx', sep='')
+  #   },
+  #   content <- function(file) {
+  #     data6 <- data_input6()
+  #     res_table <- CIBERSORT(data6,"./data/LM22.txt", perm = 200, absolute = F)
+  #     write.xlsx(res_table,file,rowNames =T)
+  #   }
+  # )
+  
   # ssGSEA
-  output$ssGSEA <- renderDataTable({
+  ssGSEAresult <- reactive({
     data6 <- data_input6()
     data61 <- as.matrix(data6)
     gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
     res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
                           ssgsea.norm=F,
                           verbose = TRUE)
+  })
+  
+  output$ssGSEA <- renderDataTable({
+    res_table<-ssGSEAresult()
     #print(res_table)
   })
   
@@ -2030,15 +2123,38 @@ server <- function(input, output, session) {
       paste(pdf_file,'.xlsx', sep='')
     },
     content <- function(file) {
-      data6 <- data_input6()
-      data61 <- as.matrix(data6)
-      gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
-      res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
-                            ssgsea.norm=F,
-                            verbose = TRUE)
+      res_table<-ssGSEAresult()
       write.xlsx(res_table,file,rowNames =T)
     }
   )
+  
+  
+  # output$ssGSEA <- renderDataTable({
+  #   data6 <- data_input6()
+  #   data61 <- as.matrix(data6)
+  #   gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
+  #   res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
+  #                         ssgsea.norm=F,
+  #                         verbose = TRUE)
+  #   #print(res_table)
+  # })
+  # 
+  # output$DownloadssGSEA <- downloadHandler(
+  #   filename <- function() {
+  #     pdf_file <<- as.character(input$fnamessGSEA)
+  #     paste(pdf_file,'.xlsx', sep='')
+  #   },
+  #   content <- function(file) {
+  #     data6 <- data_input6()
+  #     data61 <- as.matrix(data6)
+  #     gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
+  #     res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
+  #                           ssgsea.norm=F,
+  #                           verbose = TRUE)
+  #     write.xlsx(res_table,file,rowNames =T)
+  #   }
+  # )
+  
   
   # correlation
   output$correlation <- renderPlot({
@@ -2060,10 +2176,11 @@ server <- function(input, output, session) {
       pdf(file , height= 10, width=12,onefile = FALSE)
       data6 <- data_input6()
       data6.1 <- as.data.frame(t(data6))
-      ori_scattercor_plot(data6.1,
-                          x=input$selectscol1,
-                          y=input$selectscol2,
-                          method=input$selectscormethod)
+      res_pic <- ori_scattercor_plot(data6.1,
+                                     x=input$selectscol1,
+                                     y=input$selectscol2,
+                                     method=input$selectscormethod)
+      print(res_pic)
       dev.off()
       # file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
     },contentType = 'image/pdf')
