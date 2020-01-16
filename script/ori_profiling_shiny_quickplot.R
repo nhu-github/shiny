@@ -24,7 +24,7 @@ NULL
 #'
 #' @export
 
-plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=F,resam=F,cutoff=NULL,n = 30){
+plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=F,resam=F,cutoff=NULL,n = 30,rownamessize=8){
   require("ComplexHeatmap")
   oncocol <- c("Substitution/Indel" = "#228B22",        ##green
                "Gene Amplification" = "#EE0000",        ##red
@@ -32,6 +32,8 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
                "Fusion/Rearrangement" = "#EEEE00",      ##yellow
                "Truncation" = "#8E388E")                ##purple
   #'Splicing' = '#B2DF8A')                 ##
+  
+ 
   
   lgd_mut <- Legend(at = c("0","1","2","3","4"),
                     labels = c("Substitution/Indel",
@@ -50,12 +52,66 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
   
   
   
-  alter_fun = function(x,y,w,h,v){
-    n=sum(v)
-    h = h*0.8
-    w = w*0.7
-    grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
-    if(n) grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[names(which(v))], col=NA), just = "top")
+  # alter_fun = function(x,y,w,h,v){
+  #   n=sum(v)
+  #   h = h*0.8
+  #   w = w*0.7
+  #   grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
+  #   if(n) grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[names(which(v))], col=NA), just = "top")
+  # }
+  
+  # alter_fun = list(
+  #   background = function(x, y, w, h){
+  #     h = h*0.8
+  #     w = w*0.7
+  #     grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
+  #   } ,
+  #   `Substitution/Indel` = function(x, y, w, h){
+  #     h = h*0.8
+  #     w = w*0.7
+  #     grid.rect(x, y, w, h, gp=gpar(fill="#228B22", col=NA), just = "top")
+  #   } ,
+  #   `Gene Amplification` = function(x, y, w, h){
+  #     h = h*0.8
+  #     w = w*0.7
+  #     grid.rect(x, y, w, h, gp=gpar(fill="#EE0000", col=NA), just = "top")
+  #   } ,
+  #   `Gene Homozygous Deletion` = function(x, y, w, h) {
+  #     h = h*0.8
+  #     w = w*0.7
+  #     grid.rect(x, y, w, h, gp=gpar(fill="#0000EE", col=NA), just = "top")
+  #   },
+  #   
+  #   `Fusion/Rearrangement` = function(x, y, w, h){
+  #     h = h*0.8
+  #     w = w*0.7
+  #     grid.rect(x, y, w, h, gp=gpar(fill="#EEEE00", col=NA), just = "top")
+  #   },
+  #   `Truncation`=function(x, y, w, h){
+  #     h = h*0.8
+  #     w = w*0.7
+  #     grid.rect(x, y, w, h, gp=gpar(fill="#8E388E", col=NA), just = "top")
+  #   }
+  # )
+
+  varty <- unique(mut[["VAR_TYPE_SX"]])
+  if(length(varty)==1){
+    alter_fun = function(x,y,w,h,v){
+      n=sum(v)
+      h = h*0.8
+      w = w*0.7
+      grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
+      grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[varty], col=NA), just = "top")
+    }
+    }else{
+      alter_fun = function(x,y,w,h,v){
+        n=sum(v)
+        h = h*0.8
+        w = w*0.7
+        grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
+        if(n) grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[names(which(v))], col=NA), just = "top")
+      }
+    
   }
   
   varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 
@@ -67,9 +123,14 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
   allsamples = unique(mut[["ORDER_ID"]])
   
   if(!is.null(cli)){
-    HA = ori_HeatmapAnnotation(cli,bar,feature,resam=resam,cutoff=NULL)
+    HA = ori_HeatmapAnnotation(cli,bar,feature,resam=resam,cutoff=NULL,annotationsize=rownamessize)
     anno_legend_list = lapply(HA$topAnno@anno_list[c(feature)], 
                               function(anno) color_mapping_legend(anno@color_mapping, plot = FALSE))
+    for (f in feature) {
+      anno_legend_list[[f]]@grob$children[[1]]$gp$fontsize <- rownamessize + 2
+      anno_legend_list[[f]]@grob$children[[2]]$children[[1]]$gp$fontsize <- rownamessize + 2
+    }
+
     if(length(feature)==1){
       anno_legend_list[[feature]]@grob$children[[1]][[1]] <- feature 
     }
@@ -91,13 +152,13 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
       if(quickplot==F){
         onco = oncoPrint(mut, get_type = function(x) unique(strsplit(x, ";")[[1]]),
                          alter_fun = alter_fun, col = oncocol,
-                         heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=6,
-                                                     title_gp=gpar(fontsize=8, fontface='bold'), labels_gp=gpar(fontsize=8, fontface='bold')),
-                         column_names_gp = gpar(fontsize = 8, fontface='bold'),
-                         row_names_gp = gpar(fontsize = 8, fontface='bold'),
-                         row_title_gp=gpar(fontsize=10, fontface='bold'),
+                         heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                     title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                         column_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                         row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                         row_title_gp=gpar(fontsize=rownamessize+2, fontface='bold'),
                          show_column_names = F,
-                         show_heatmap_legend=F,
+                         show_heatmap_legend=T,
                          show_pct = T,
                          remove_empty_columns = T,
                          top_annotation =HA$topAnno,
@@ -109,17 +170,19 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
-                        column_names_gp = gpar(fontsize = 9),
-                        row_names_gp = gpar(fontsize = 9),
+                        column_names_gp = gpar(fontsize = rownamessize),
+                        row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                         #row_names_side='left',
                         #row_title_side='left',
-                        row_title_gp=gpar(fontsize=8,fontface='bold'),
+                        heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                    title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                        row_title_gp=gpar(fontsize=rownamessize,fontface='bold'),
                         top_annotation = HA$topAnno,
                         column_order = mutN$ORDER_ID,
                         #row_order = colnames(mutN1),
                         row_order = as.character(freq$GENE[1:n]),
                         show_column_names = F,
-                        show_heatmap_legend = F,
+                        show_heatmap_legend = T,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
@@ -132,13 +195,13 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
       if(quickplot==F){
         onco = oncoPrint(mut, get_type = function(x) unique(strsplit(x, ";")[[1]]),
                          alter_fun = alter_fun, col = oncocol,
-                         heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=6,
-                                                     title_gp=gpar(fontsize=8, fontface='bold'), labels_gp=gpar(fontsize=8, fontface='bold')),
-                         column_names_gp = gpar(fontsize = 8, fontface='bold'),
-                         row_names_gp = gpar(fontsize = 8, fontface='bold'),
-                         row_title_gp=gpar(fontsize=10, fontface='bold'),
+                         heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                     title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                         column_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                         row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                         row_title_gp=gpar(fontsize=rownamessize, fontface='bold'),
                          show_column_names = F,
-                         show_heatmap_legend=F,
+                         show_heatmap_legend=T,
                          show_pct = T,
                          remove_empty_columns = T,
                          top_annotation =HA$topAnno
@@ -156,17 +219,19 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
-                        column_names_gp = gpar(fontsize = 9),
-                        row_names_gp = gpar(fontsize = 9),
+                        column_names_gp = gpar(fontsize = rownamessize),
+                        row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                         #row_names_side='left',
                         #row_title_side='left',
-                        row_title_gp=gpar(fontsize=8,fontface='bold'),
+                        heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                    title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                        row_title_gp=gpar(fontsize=rownamessize,fontface='bold'),
                         top_annotation = HA$topAnno,
                         column_order =  rownames(mutNN),
                         #row_order = colnames(mutN1),
                         row_order = as.character(freq$GENE[1:n]),
                         show_column_names = F,
-                        show_heatmap_legend = F,
+                        show_heatmap_legend = T,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
@@ -176,7 +241,7 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
       
     }
     
-    p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
+    p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
     print(p)
   }else{
     mut = as.data.frame(mut, stringsAsFactors = F)
@@ -186,13 +251,13 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
     if(quickplot==F){
       onco = oncoPrint(mut, get_type = function(x) unique(strsplit(x, ";")[[1]]),
                        alter_fun = alter_fun, col = oncocol,
-                       heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=6,
-                                                   title_gp=gpar(fontsize=8, fontface='bold'), labels_gp=gpar(fontsize=8, fontface='bold')),
-                       column_names_gp = gpar(fontsize = 8, fontface='bold'),
-                       row_names_gp = gpar(fontsize = 8, fontface='bold'),
-                       row_title_gp=gpar(fontsize=10, fontface='bold'),
+                       heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                   title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                       column_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                       row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                       row_title_gp=gpar(fontsize=rownamessize, fontface='bold'),
                        show_column_names = F,
-                       show_heatmap_legend=F,
+                       show_heatmap_legend=T,
                        show_pct = T,
                        remove_empty_columns = T)
       # draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut)))
@@ -207,17 +272,19 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
       onco <- Heatmap(mut,
                       col = oncocol,
                       na_col = 'grey99',
-                      column_names_gp = gpar(fontsize = 9),
-                      row_names_gp = gpar(fontsize = 9),
+                      column_names_gp = gpar(fontsize =rownamessize),
+                      row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                       #row_names_side='left',
                       #row_title_side='left',
-                      row_title_gp=gpar(fontsize=8,fontface='bold'),
+                      heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                  title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                      row_title_gp=gpar(fontsize=rownamessize,fontface='bold'),
                       # top_annotation = HA$topAnno,
                       column_order =  rownames(mutNN),
                       #row_order = colnames(mutN1),
                       row_order = as.character(freq$GENE[1:n]),
                       show_column_names = F,
-                      show_heatmap_legend = F,
+                      show_heatmap_legend = T,
                       use_raster = T,
                       raster_device = "png",
                       raster_quality = 2)
@@ -225,7 +292,8 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
       
     }
     
-    p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut)))
+   # p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut)))
+    p = draw(onco, heatmap_legend_side='right')
     print(p)
     
   }
@@ -237,8 +305,9 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,quickplot=F,waterfall=
 
 
 plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix, 
-                            pathway_genes, quickplot=F , waterfall=F, resam=F, nfreq=0.01, cutoff=NULL){
+                            pathway_genes, quickplot=F , waterfall=F, resam=F, nfreq=0.01, cutoff=NULL,rownamessize=8){
   ## cli
+  
   oncocol <- c("Substitution/Indel" = "#228B22",        ##green
                "Gene Amplification" = "#EE0000",        ##red
                "Gene Homozygous Deletion" = "#0000EE",  ##blue
@@ -261,37 +330,42 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
                     labels_gp = gpar( fontsize = 10),
                     title_gp = gpar( fontsize = 10, fontface="bold"))
   
-  
-  alter_fun = function(x,y,w,h,v){
-    n=sum(v)
-    h = h*0.8
-    w = w*0.8
-    grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
-    if(n) grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[names(which(v))], col=NA), just = "top")
+  varty <- unique(mut[["VAR_TYPE_SX"]])
+  if(length(varty)==1){
+    alter_fun = function(x,y,w,h,v){
+      n=sum(v)
+      h = h*0.8
+      w = w*0.7
+      grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
+      grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[varty], col=NA), just = "top")
+    }
+  }else{
+    alter_fun = function(x,y,w,h,v){
+      n=sum(v)
+      h = h*0.8
+      w = w*0.7
+      grid.rect(x, y, w, h, gp = gpar(fill = "grey95", col = NA))
+      if(n) grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[names(which(v))], col=NA), just = "top")
+    }
+    
   }
   
-  # cell_fun = function(j,i,x,y,width,height,fill){
-  #   #n=sum(v)
-  #   height = height*0.8
-  #   width = width*0.8
-  #   grid.rect(x, y, width, height, gp = gpar(fill = NA, col = 'grey30'))
-  #   #if(n) grid.rect(x,y-h*0.5+1:n/n*h, w, 1/n*h, gp=gpar(fill=oncocol[names(which(v))], col=NA), just = "top")
-  # }
-  
-  
-  
+
   varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 
                'Gene Amplification', 'Gene Homozygous Deletion', 
                'Truncation')
   mut <- na.omit(mut[,c("ORDER_ID","GENE","VAR_TYPE_SX")])
   mut <- rmvar(mut,varorder)
   
-  
-  
+
   if(!is.null(cli)){
-    HA = ori_HeatmapAnnotation(cli,bar,feature,resam=resam,cutoff=NULL)
+    HA = ori_HeatmapAnnotation(cli,bar,feature,resam=resam,cutoff=NULL,annotationsize=rownamessize)
     anno_legend_list = lapply(HA$topAnno@anno_list[c(feature)], 
                               function(anno) color_mapping_legend(anno@color_mapping, plot = FALSE))
+    for (f in feature) {
+      anno_legend_list[[f]]@grob$children[[1]]$gp$fontsize <- rownamessize + 2
+      anno_legend_list[[f]]@grob$children[[2]]$children[[1]]$gp$fontsize <- rownamessize + 2
+    }
     if(length(feature)==1){
       anno_legend_list[[feature]]@grob$children[[1]][[1]] <- feature 
     }
@@ -343,15 +417,14 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
         onco = oncoPrint(mat = mut, alter_fun = alter_fun, 
                          get_type = function(x) unique(strsplit(x, ";")[[1]]),
                          col = oncocol,
-                         heatmap_legend_param = list(title='Alternations', title_position=c('leftcenter'), 
-                                                     nrow=1, title_gp=gpar(fontface='bold', size = 10), 
-                                                     labels_gp=gpar(fontface='bold', size = 8)),
-                         column_names_gp = gpar(fontface='bold'),
-                         row_names_gp = gpar(fontface='bold', cex = 0.5),
-                         row_title_gp=gpar(fontface='bold'),
+                         heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                     title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                         column_names_gp =  gpar(fontsize = rownamessize, fontface='bold'),
+                         row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                         row_title_gp= gpar(fontsize = rownamessize, fontface='bold'),
                          show_pct = T, 
                          row_names_side = "right",
-                         show_heatmap_legend=F,
+                         show_heatmap_legend=T,
                          gap = unit(3, 'mm'),
                          row_split = all_genes,
                          remove_empty_columns = T,
@@ -360,18 +433,20 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
                          row_order = all_genes_order$GENE
         )
         
-        p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
+        p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
         print(p)    
         
       }else{
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
-                        column_names_gp = gpar(fontsize = 9),
-                        row_names_gp = gpar(fontsize = 9),
+                        column_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                        row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                         #row_names_side='left',
                         #row_title_side='left',
-                        row_title_gp=gpar(fontsize=8,fontface='bold'),
+                        heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                    title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                        row_title_gp=gpar(fontsize = rownamessize, fontface='bold'),
                         top_annotation = HA$topAnno,
                         column_order = mutN$ORDER_ID,
                         #column_gap = unit(3, "mm"),
@@ -381,11 +456,11 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
                         row_order = all_genes_order$GENE,
                         row_split = all_genes,
                         show_column_names = F,
-                        show_heatmap_legend = F,
+                        show_heatmap_legend = T,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
-        draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
+        draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
       }
       
       
@@ -400,15 +475,14 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
         onco = oncoPrint(mat = mut, alter_fun = alter_fun, 
                          get_type = function(x) unique(strsplit(x, ";")[[1]]),
                          col = oncocol,
-                         heatmap_legend_param = list(title='Alternations', title_position=c('leftcenter'), 
-                                                     nrow=1, title_gp=gpar(fontface='bold', size = 10), 
-                                                     labels_gp=gpar(fontface='bold', size = 8)),
-                         column_names_gp = gpar(fontface='bold'),
-                         row_names_gp = gpar(fontface='bold', cex = 0.5),
-                         row_title_gp=gpar(fontface='bold'),
+                         heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                     title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                         column_names_gp =gpar(fontsize = rownamessize, fontface='bold'),
+                         row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                         row_title_gp=gpar(fontsize = rownamessize, fontface='bold'),
                          show_pct = T, 
                          row_names_side = "right",
-                         show_heatmap_legend=F,
+                         show_heatmap_legend=T,
                          gap = unit(3, 'mm'),
                          row_split = all_genes,
                          remove_empty_columns = T,
@@ -416,29 +490,31 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
                          column_order = rownames(mutNN)
         )
         
-        p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
+        p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
         print(p)    
         
       }else{
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
-                        column_names_gp = gpar(fontsize = 9),
-                        row_names_gp = gpar(fontsize = 9),
+                        column_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                        row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                         #row_names_side='left',
                         #row_title_side='left',
-                        row_title_gp=gpar(fontsize=8,fontface='bold'),
+                        heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                    title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                        row_title_gp=gpar(fontsize = rownamessize, fontface='bold'),
                         top_annotation = HA$topAnno,
                         column_order =  rownames(mutNN),
                         #row_order = colnames(mutN1),
                         row_order = all_genes_order$GENE,
                         show_column_names = F,
-                        show_heatmap_legend = F,
+                        show_heatmap_legend = T,
                         row_split = all_genes,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
-        p =draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
+        p =draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
         print(p) 
         
       }
@@ -485,15 +561,14 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
       onco = oncoPrint(mat = mut, alter_fun = alter_fun, 
                        get_type = function(x) unique(strsplit(x, ";")[[1]]),
                        col = oncocol,
-                       heatmap_legend_param = list(title='Alternations', title_position=c('leftcenter'), 
-                                                   nrow=1, title_gp=gpar(fontface='bold', size = 10), 
-                                                   labels_gp=gpar(fontface='bold', size = 8)),
-                       column_names_gp = gpar(fontface='bold'),
-                       row_names_gp = gpar(fontface='bold', cex = 0.5),
-                       row_title_gp=gpar(fontface='bold'),
+                       heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                   title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                       column_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                       row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                       row_title_gp=gpar(fontsize = rownamessize, fontface='bold'),
                        show_pct = T, 
                        row_names_side = "right",
-                       show_heatmap_legend=F,
+                       show_heatmap_legend=T,
                        gap = unit(3, 'mm'),
                        row_split = all_genes,
                        remove_empty_columns = T,
@@ -501,31 +576,35 @@ plot_pathway_cli = function(mut, cli=NULL, bar, feature, prefix,
                        row_order = all_genes_order$GENE,
                        column_order = rownames(mutNN)
       )
-      p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut)))
+      #p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut)))
+      p = draw(onco, heatmap_legend_side='right')
       print(p) 
       
     }else{
       onco <- Heatmap(matrix=mut,
                       col = oncocol,
                       na_col = 'grey99',
-                      column_names_gp = gpar(fontsize = 9),
-                      row_names_gp = gpar(fontsize = 9),
+                      column_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
+                      row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                       #row_names_side='left',
                       #row_title_side='left',
-                      row_title_gp=gpar(fontsize=8,fontface='bold'),
+                      heatmap_legend_param = list(title='Alternations', title_position=c('topleft'), nrow=length(names(table(mut)))-1,
+                                                  title_gp=gpar(fontsize=rownamessize+2, fontface='bold'), labels_gp=gpar(fontsize=rownamessize+2)),
+                      row_title_gp=gpar(fontsize = rownamessize, fontface='bold'),
                       #top_annotation = HA$topAnno,
                       column_order =  rownames(mutNN),
                       #row_order = colnames(mutN1),
                       row_order = all_genes_order$GENE,
                       show_column_names = F,
-                      show_heatmap_legend = F,
+                      show_heatmap_legend = T,
                       row_split = all_genes,
                       gap = unit(3, 'mm'),
                       use_raster = T,
                       raster_device = "png",
                       raster_quality = 2)
       
-      p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut)))
+     # p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut)))
+      p = draw(onco, heatmap_legend_side='right')
       print(p) 
       
     }

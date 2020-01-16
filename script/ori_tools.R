@@ -195,7 +195,7 @@ convert_mut = function(mut=mut, freq, all_sn, n = 20){
 }
 
 
-ori_HeatmapAnnotation <- function(cli,bar,feature,resam=F,cutoff=NULL){
+ori_HeatmapAnnotation <- function(cli,bar,feature,resam=F,annotationsize=8,cutoff=NULL){
   if(resam==F){
     set.seed(123)
   }else{
@@ -220,9 +220,9 @@ ori_HeatmapAnnotation <- function(cli,bar,feature,resam=F,cutoff=NULL){
                                                                  height = unit(2, "cm"),width=unit(1, "cm")
                                                                  ),
                                                df = annoInfo[,-1:-2],
-                                               annotation_legend_param = list(title_gp=gpar(fontsize=8, fontface='bold'), 
-                                                                              labels_gp=gpar(fontsize=8, fontface='bold')),
-                                               annotation_name_gp = gpar(fontsize = 8, fontface='bold'),
+                                               annotation_legend_param = list(title_gp=gpar(fontsize=annotationsize, fontface='bold'), 
+                                                                              labels_gp=gpar(fontsize=annotationsize, fontface='bold')),
+                                               annotation_name_gp = gpar(fontsize = annotationsize, fontface='bold'),
                                                show_legend = F
   )
   topAnno@anno_list$tmp@name <- bar

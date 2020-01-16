@@ -14,6 +14,7 @@ library(shinythemes)
 library(DT)
 
 #source("./script/ori_profiling_shiny.R")
+#source("./script/ori_profiling_shiny_quickplot_origin.R")
 source("./script/ori_profiling_shiny_quickplot.R")
 source("./script/ori_boxplot_shiny.R")
 source("./script/ori_barplot.R")
@@ -81,6 +82,10 @@ ui <- fluidPage(
                                                       sliderInput("number", 
                                                                   label = "The number of first top mutant genes:",
                                                                   min = 10, max = 100, value = 30, step = 1
+                                                      ),
+                                                      sliderInput("rownamessize",
+                                                                  label = "The size of genenames",
+                                                                  min = 6, max = 16, value = 8, step = 1
                                                       ),
                                                       
                                                       selectInput("selectwaterfall", "show the waterfall", 
@@ -743,6 +748,7 @@ ui <- fluidPage(
                                                     h5("This may take some time"),
                                                     selectInput("selectsig", "Choose gene signatures",
                                                                 choices=c("xCell(N=64)"),multiple = F),
+                                                    actionButton("startxCell","start")
                                                   )),
 
 
@@ -761,6 +767,7 @@ ui <- fluidPage(
                                                     h5("This may take some time"),
                                                     selectInput("selectmixture_file", "Choose mixture file",
                                                                 choices=c("LM22"),multiple = F),
+                                                    actionButton("startcibersort","start")
                                                   )),
 
                                  conditionalPanel("input.cPanelssession3 == 3",
@@ -778,6 +785,7 @@ ui <- fluidPage(
                                                     h5("This may take some time"),
                                                     selectInput("selectssGSEAgs", "Choose gene sets",
                                                                 choices=c("MsigDB.c2.cp.v6.2.symbols.gmt"),multiple = F),
+                                                    actionButton("startssGSEA","start")
                                                   )),
                                  
                                  conditionalPanel("input.cPanelssession3 == 4",
@@ -1315,6 +1323,7 @@ server <- function(input, output, session) {
                                 prefix = input$fname22,
                                 n = input$number,
                                 quickplot = input$selectquickplot,
+                                rownamessize = input$rownamessize,
                                 resam=input$selectchangecolor,
                                 waterfall = input$selectwaterfall)
       
@@ -1324,6 +1333,7 @@ server <- function(input, output, session) {
                                   prefix=input$fname22,
                                   pathway_genes = data3,
                                   nfreq=input$nfreq,
+                                  rownamessize = input$rownamessize,
                                   resam = input$selectchangecolor,
                                   quickplot = input$selectquickplot,
                                   waterfall = input$selectwaterfall
@@ -2018,17 +2028,25 @@ server <- function(input, output, session) {
     },contentType = 'image/pdf')
   
   #xCell
-  xcellresult <- reactive({
-    data6 <- data_input6()
-    res_table<-xCellAnalysis(data6)
-    return(res_table)
-    
+  
+  # observeEvent(input$startxCell, {
+  #   session$sendCustomMessage(type = 'testmessage',
+  #                             message = 'Please wait,it takes some time')
+  # })
+  
+  observeEvent(input$startxCell, {
+    showNotification(paste("Please wait,it takes some time"), duration = 5)
   })
   
-  output$xcell <- renderDataTable({
-    res_table <- xcellresult()
-    #print(res_table)
+  res_table_xcell <- eventReactive(input$startxCell, {
+    data6 <- data_input6()
+    xCellAnalysis(data6)
   })
+
+  output$xcell <- renderDataTable({
+      res_table <- res_table_xcell()
+      ##print(res_table)
+    })
   
   output$Downloadxcell <- downloadHandler(
     filename <- function() {
@@ -2036,11 +2054,34 @@ server <- function(input, output, session) {
       paste(pdf_file,'.xlsx', sep='')
     },
     content <- function(file) {
-      res_table <- xcellresult()
+      res_table <- res_table_xcell()
       write.xlsx(res_table,file,rowNames =T)
     }
   )
-  
+ 
+  # xcellresult <- reactive({
+  #   data6 <- data_input6()
+  #   res_table<-xCellAnalysis(data6)
+  #   return(res_table)
+  # 
+  # })
+  # 
+  # output$xcell <- renderDataTable({
+  #   res_table <- xcellresult()
+  #   #print(res_table)
+  # })
+  # 
+  # output$Downloadxcell <- downloadHandler(
+  #   filename <- function() {
+  #     pdf_file <<- as.character(input$fnamexcell)
+  #     paste(pdf_file,'.xlsx', sep='')
+  #   },
+  #   content <- function(file) {
+  #     res_table <- xcellresult()
+  #     write.xlsx(res_table,file,rowNames =T)
+  #   }
+  # )
+
   
   # output$xcell <- renderDataTable({
   #   data6 <- data_input6()
@@ -2061,14 +2102,17 @@ server <- function(input, output, session) {
   # )
   
   #cibersort
-  cibersortresult <- reactive({
+  observeEvent(input$startcibersort, {
+    showNotification(paste("Please wait,it takes some time"), duration = 5)
+  })
+  
+  res_table_ciber <- eventReactive(input$startcibersort, {
     data6 <- data_input6()
     res_table <- CIBERSORT(data6,"./data/LM22.txt", perm = 200, absolute = F)
-    
   })
   
   output$cibersort <- renderDataTable({
-    res_table <- cibersortresult()
+    res_table <- res_table_ciber()
     #print(res_table)
   })
   
@@ -2078,32 +2122,16 @@ server <- function(input, output, session) {
       paste(pdf_file,'.xlsx', sep='')
     },
     content <- function(file) {
-      res_table <- cibersortresult()
+      res_table <- res_table_ciber()
       write.xlsx(res_table,file,rowNames =T)
     }
   )
   
-
-  # output$cibersort <- renderDataTable({
-  #   data6 <- data_input6()
-  #   res_table <- CIBERSORT(data6,"./data/LM22.txt", perm = 200, absolute = F)
-  #   #print(res_table)
-  # })
-  # 
-  # output$Downloadcibersort <- downloadHandler(
-  #   filename <- function() {
-  #     pdf_file <<- as.character(input$fnamexcibersort)
-  #     paste(pdf_file,'.xlsx', sep='')
-  #   },
-  #   content <- function(file) {
-  #     data6 <- data_input6()
-  #     res_table <- CIBERSORT(data6,"./data/LM22.txt", perm = 200, absolute = F)
-  #     write.xlsx(res_table,file,rowNames =T)
-  #   }
-  # )
-  
   # ssGSEA
-  ssGSEAresult <- reactive({
+  observeEvent(input$startssGSEA, {
+    showNotification(paste("Please wait,it takes some time"), duration = 5)
+  })
+  res_table_ssGSEA <- eventReactive(input$startssGSEA, {
     data6 <- data_input6()
     data61 <- as.matrix(data6)
     gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
@@ -2113,7 +2141,7 @@ server <- function(input, output, session) {
   })
   
   output$ssGSEA <- renderDataTable({
-    res_table<-ssGSEAresult()
+    res_table<-res_table_ssGSEA()
     #print(res_table)
   })
   
@@ -2123,38 +2151,10 @@ server <- function(input, output, session) {
       paste(pdf_file,'.xlsx', sep='')
     },
     content <- function(file) {
-      res_table<-ssGSEAresult()
+      res_table<-res_table_ssGSEA()
       write.xlsx(res_table,file,rowNames =T)
     }
   )
-  
-  
-  # output$ssGSEA <- renderDataTable({
-  #   data6 <- data_input6()
-  #   data61 <- as.matrix(data6)
-  #   gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
-  #   res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
-  #                         ssgsea.norm=F,
-  #                         verbose = TRUE)
-  #   #print(res_table)
-  # })
-  # 
-  # output$DownloadssGSEA <- downloadHandler(
-  #   filename <- function() {
-  #     pdf_file <<- as.character(input$fnamessGSEA)
-  #     paste(pdf_file,'.xlsx', sep='')
-  #   },
-  #   content <- function(file) {
-  #     data6 <- data_input6()
-  #     data61 <- as.matrix(data6)
-  #     gene_sets = fgsea::gmtPathways("./data/MsigDB.c2.cp.v6.2.symbols.gmt")
-  #     res_table<-GSVA::gsva(expr = data61, gset.idx.list = gene_sets, min.sz=10,max.sz=500,method = 'ssgsea', 
-  #                           ssgsea.norm=F,
-  #                           verbose = TRUE)
-  #     write.xlsx(res_table,file,rowNames =T)
-  #   }
-  # )
-  
   
   # correlation
   output$correlation <- renderPlot({
