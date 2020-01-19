@@ -41,7 +41,7 @@ ui <- fluidPage(
   
   theme = shinytheme('cerulean'),
     #shinythemes::themeSelector()
-    #theme = shinytheme('sandstone'),
+  #theme = shinytheme('sandstone'),
     navbarPage("Himalaya 1.0", 
                
                tabPanel("Mutation",
@@ -851,8 +851,9 @@ ui <- fluidPage(
                                                    checkboxInput("selectcluster_columns", 
                                                                  "cluster columns", TRUE),
                                                    # if the argument(cluster_rows)is added ,an error will be report.
-                                                   selectInput("selectupgenelist", "Upload the genelist", 
-                                                                choices = c("NO" = "NO","YES"="YES")
+                                                   selectInput("selectupgenelist", "Upload the genelist",
+                                                              choices = c("NO" = "NO","YES"="YES"),
+                                                              selected="YES"
                                                     ),
                                                     conditionalPanel("input.selectupgenelist == 'YES'",
                                                                      selectInput("filegenelist",label= "choose an example or your own data", 
@@ -866,7 +867,8 @@ ui <- fluidPage(
                                                                      )
                                                     ),
                                                     selectInput("selectupexprinfo", "Upload the sample info", 
-                                                                choices = c("NO" = "NO","YES"="YES")
+                                                                choices = c("NO" = "NO","YES"="YES"),
+                                                                selected="YES"
                                                     ),
                                                     conditionalPanel("input.selectupexprinfo == 'YES'",
                                                                      selectInput("fileexprinfo",label= "choose an example or your own data", 
@@ -1102,11 +1104,31 @@ server <- function(input, output, session) {
   )
   
   # genelist 
+  # data_input7 <- reactive({
+  #   if(input$filegenelist == 'Examplegenelist'){
+  #     d2 <- read.xlsx("./example/genelist.xlsx")
+  #   }
+  #   else if(input$filegenelist == 'load_my_owngenelist'){
+  #     inFile <- input$filegenelist7
+  #     if (is.null(inFile))
+  #       return(NULL)
+  #     else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = F) }
+  #     else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
+  #     else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
+  #   }
+  # 
+  #   else 
+  #     return(NULL)
+  #   Dataset3 <- data.frame(d2)
+  #   return(as.data.frame(Dataset3))
+  # })
   data_input7 <- reactive({
-    if(input$filegenelist == 'Examplegenelist'){
+    if(input$selectupgenelist=="NO"){
+      return(NULL)
+    }else if(input$filegenelist == 'Examplegenelist'){
       d2 <- read.xlsx("./example/genelist.xlsx")
-    }
-    else if(input$filegenelist == 'load_my_owngenelist'){
+      
+    }else if(input$filegenelist == 'load_my_owngenelist'){
       inFile <- input$filegenelist7
       if (is.null(inFile))
         return(NULL)
@@ -1114,12 +1136,13 @@ server <- function(input, output, session) {
       else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
       else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
     }
+    
     else 
       return(NULL)
     Dataset3 <- data.frame(d2)
     return(as.data.frame(Dataset3))
   })
-  
+
   output$downloadgenelist <- downloadHandler( 
     filename <- function() {
       paste0('Example_expression_genelist','.xlsx')
@@ -1131,8 +1154,27 @@ server <- function(input, output, session) {
   )
   
   # expression info
+  # data_input8 <- reactive({
+  #   if(input$fileexprinfo == 'Exampleexprinfo'){
+  #     d2 <- read.xlsx("./example/example_expression_info.xlsx",rowNames = T)
+  #   }
+  #   else if(input$fileexprinfo == 'load_my_ownexprinfo'){
+  #     inFile <- input$fileexprinfo8
+  #     if (is.null(inFile))
+  #       return(NULL)
+  #     else if(grepl(".xlsx", inFile[1])) { d2 = read.xlsx(as.character(inFile$datapath), colNames = TRUE, rowNames = T) }
+  #     else if(grepl(".csv", inFile[1])) { d2 = read.csv(as.character(inFile$datapath), header = TRUE, sep = ",", stringsAsFactors = F, as.is = T, fill = T) }
+  #     else if(grepl(".txt", inFile[1])) { d2 = read.table(as.character(inFile$datapath), header = TRUE, sep = "\t", stringsAsFactors = F, as.is = T, fill = T) }
+  #   }
+  #   else 
+  #     return(NULL)
+  #   Dataset3 <- data.frame(d2)
+  #   return(as.data.frame(Dataset3))
+  # })
   data_input8 <- reactive({
-    if(input$fileexprinfo == 'Exampleexprinfo'){
+    if(input$selectupexprinfo=="NO"){
+      return(NULL)
+    }else if (input$fileexprinfo == 'Exampleexprinfo'){
       d2 <- read.xlsx("./example/example_expression_info.xlsx",rowNames = T)
     }
     else if(input$fileexprinfo == 'load_my_ownexprinfo'){
@@ -1159,7 +1201,6 @@ server <- function(input, output, session) {
     }
   )
   
-
   observe({
     dsnames1 <- colnames(data_input1())
     dsnames2 <- colnames(data_input2())
@@ -2131,6 +2172,7 @@ server <- function(input, output, session) {
   observeEvent(input$startssGSEA, {
     showNotification(paste("Please wait,it takes some time"), duration = 5)
   })
+  
   res_table_ssGSEA <- eventReactive(input$startssGSEA, {
     data6 <- data_input6()
     data61 <- as.matrix(data6)
@@ -2227,7 +2269,7 @@ server <- function(input, output, session) {
   output$ReadMe1 <- renderUI({
     str00 <- paste("&emsp;")
     str0 <- paste("示例")
-    str1 <- paste("&emsp; 1.在公司内部网络环境下，打开浏览器，输入 http://10.10.174.10:3838/pipeline1/，即可使用分析工具")
+    str1 <- paste("&emsp; 1.在公司内部网络环境下，打开浏览器，输入 http://10.10.174.10:3838/Himalaya/，即可使用分析工具")
     str2 <- paste("&emsp; 2.示例文件包括 突变文件，临床信息，如果需要展示profiling在信号通路上的突变，则需要信号通路文件")
     str3 <- paste("&emsp; 3.在示例文件下，点击不同模块，调整对应参数,即可展示结果，点击下载按钮，输入文件名，
                   即可将结果保存在目的文件夹下，若不输入文件名，则保存为默认文件")
@@ -2252,19 +2294,24 @@ server <- function(input, output, session) {
     str36 <- paste("&emsp; 5. Count variant &emsp;统计基因的突变情况，包括是基因突变频率，基因不同突变类型突变频率，在信号通路上突变频率，
                    下载时，将三个表格一同下载。")
     str37 <- paste("&emsp; 6. Clinical statistics &emsp;根据分组统计对应临床信息")
-    str38 <- paste("&emsp; 7. Statistics test &emsp;包括wilcoxon test和 t test以及 fisher test和chisq test，
+    str38 <- paste("&emsp; 7. Statistics test &emsp;包括wilcoxon test和 t test 以及 fisher test和chisq test，
                    可以分别查看，下载时是一同下载")
     str39 <- paste("&emsp; 8. Fishertest plot &emsp;可以选择使用分组的信息，并且选择cutoff，以及筛选高频突变基因，
                    Gene mutation frequency是指突变样本个数")
-
+    str310 <- paste("&emsp; 9. Co-mutation plot &emsp;可以选择高频突变基因，默认是前30个高频突变基因。可以调整gene name的大小。
+                   Gene mutation frequency是指突变样本个数")
+    str311 <- paste("&emsp;10. Find driver gene &emsp; 基于突变位点的位置信息，使用oncodriveCLUST算法识别driver gene，可分别下载plot和table")
+    str312 <- paste("&emsp;11. Circos &emsp; 可以选择在Circos上展示的mutation type，可以单独选择一种或两种，在这里默认的是展示snv，cnv，fusion三种")
+    str313 <- paste("&emsp;12. CNV &emsp; 展示CNV Amp和Del在染色体上突变情况和突变高频基因，图和表可分别下载。")
+    
     HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
-         str32,str33,str34,str35,str36,str37,str38,str39, sep = '<br/>'))
+         str32,str33,str34,str35,str36,str37,str38,str39,str310,str311,str312,str313,sep = '<br/>'))
   })
   
   output$ReadMe2 <- renderUI({
     str00 <- paste("&emsp;")
     str0 <- paste("示例")
-    str1 <- paste("&emsp; 1.在公司内部网络环境下，打开浏览器，输入 http://10.10.174.10:3838/pipeline1/，则可使用分析工具")
+    str1 <- paste("&emsp; 1.在公司内部网络环境下，打开浏览器，输入 http://10.10.174.10:3838/Himalaya/，则可使用分析工具")
     str2 <- paste("&emsp; 2.示例文件包括 生存分析文件，即包括生存时间，生存状态，分组信息")
     str3 <- paste("&emsp; 3.在示例文件下，点击不同模块，调整对应参数,即可展示结果，点击下载按钮，输入文件名，
                   即可将结果保存在目的文件夹下，若不输入文件名，则保存为默认文件")
@@ -2277,15 +2324,61 @@ server <- function(input, output, session) {
     str31 <- paste("分析模块")
     str32 <- paste("&emsp; 1.Survival &emsp;需要三列信息，即生存时间，生存状态，分组信息。可选择是否出现统计表格")
     str33 <- paste("&emsp; 2.ggforest &emsp;需要三列信息，即生存时间，生存状态，以及选择进行分析的因素，若forest plot中HR过大，则可调整分析的因素")
-
+    
     HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
                str32,str33,sep = '<br/>'))
   })
+
+  output$ReadMe3 <- renderUI({
+    str00 <- paste("&emsp;")
+    str0 <- paste("示例")
+    str1 <- paste("&emsp; 1.在公司内部网络环境下，打开浏览器，输入 http://10.10.174.10:3838/Himalaya/，则可使用分析工具")
+    str2 <- paste("&emsp; 2.示例文件包括特征列和标签列")
+    str3 <- paste("&emsp; 3.在示例文件下，点击Machine Learning，调整对应参数,即可展示结果，点击下载按钮，输入文件名，
+                  即可将结果保存在目的文件夹下，若不输入文件名，则保存为默认文件")
+    
+    str21 <- paste("数据格式")
+    str22 <- paste("&emsp; 1.建议上传文件格式为.xlsx 或者下载示例数据，将文件内容替换，再重新上传，注意文件解密")
+    str23 <- paste("&emsp; 2.上传的任何文件都不允许使用中文字符。")
+    str24 <- paste("&emsp; 3.上传的文件，若存在与示例文件列内容相同，但列名不同时，建议将列名更改为与示例文件列名相同，尤其注意列名大小写问题")
+    
+    str31 <- paste("分析模块")
+    str32 <- paste("&emsp; MechineLearning &emsp;需要标签列信息，即分组信息。在训练模型时，可选择使用的不同的算法，
+                    包括Random Forest（随机森林），Support Vector Machine（支持向量机）Logistic Regression(逻辑回归)，Naive Bayes（朴素贝叶斯），
+                    k-Nearest  Neighbors（K近邻）,Decision Tree（决策树），默认是Random Forest。可选择交叉验证倍数，默认为5倍交叉验证。
+                    可选择将数据切割成训练集和验证集的比例，这里默认是将全部数据的0.8划分为训练集。
+                   ")
+    HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
+               str32,sep = '<br/>'))
+  })
   
   
-  
+  output$ReadMe4 <- renderUI({
+    str00 <- paste("&emsp;")
+    str0 <- paste("示例")
+    str1 <- paste("&emsp; 1.在公司内部网络环境下，打开浏览器，输入 http://10.10.174.10:3838/Himalaya/，则可使用分析工具")
+    str2 <- paste("&emsp; 2.示例文件为表达文件 行是基因，列是样本。")
+    str3 <- paste("&emsp; 3.在示例文件下，点击不同模块，调整对应参数,即可展示结果，点击下载按钮，输入文件名，
+                  即可将结果保存在目的文件夹下，若不输入文件名，则保存为默认文件")
+    
+    str21 <- paste("数据格式")
+    str22 <- paste("&emsp; 1.建议上传文件格式为.xlsx 或者下载示例数据，将文件内容替换，再重新上传，注意文件解密")
+    str23 <- paste("&emsp; 2.上传的任何文件都不允许使用中文字符。")
+    str24 <- paste("&emsp; 3.上传的文件，若存在与示例文件列内容相同，但列名不同时，建议将列名更改为与示例文件列名相同，尤其注意列名大小写问题")
+    
+    str31 <- paste("分析模块")
+    str32 <- paste("&emsp; 1.xCell &emsp;导入表达文件，点击start按钮，即可开始进行xcell分析，在这里是默认的gene signature是64种免疫细胞，分析需要运行一定的时间")
+    str33 <- paste("&emsp; 2.Cibersort &emsp;导入表达文件，点击start按钮，即可开始进行cibersort分析，在这里是默认的gene signature是22种免疫细胞，分析需要运行一定的时间")
+    str34 <- paste("&emsp; 3.ssGSEA &emsp;导入表达文件，点击start按钮，即可开始进行ssGSEA分析，在这里是默认的gene sets是MsiDB.c2.cp.v6.2，分析需要运行一定的时间")
+    str35 <- paste("&emsp; 4.Correlation &emsp;导入表达文件，可选择任意两列计算相关计算，计算方法包括pearson，spearman，kendall。")
+    str36 <- paste("&emsp; 5.Heatmap &emsp;可上传需要展示的genelist和sample info，如无genelist文件，默认展示前50个基因。若要改变默认颜色，选择YES，并且点击 Refresh改变颜色。
+                   该部分选择参数发生改变时，都需要点击refresh。")
+    HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
+               str32,str33,str34,str35,str36,sep = '<br/>'))
+  })
   
 
+  
 }
 
 
