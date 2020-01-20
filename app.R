@@ -2430,8 +2430,8 @@ server <- function(input, output, session) {
     
     str31 <- paste("分析模块")
     str32 <- paste("&emsp; MechineLearning &emsp;需要标签列信息，即分组信息。在训练模型时，可选择使用的不同的算法，
-                    包括Random Forest（随机森林），Support Vector Machine（支持向量机）Logistic Regression(逻辑回归)，Naive Bayes（朴素贝叶斯），
-                    k-Nearest  Neighbors（K近邻）,Decision Tree（决策树），默认是Random Forest。可选择交叉验证倍数，默认为5倍交叉验证。
+                    包括Random Forest（随机森林），Support Vector Machine（支持向量机），Logistic Regression(逻辑回归)，Naive Bayes（朴素贝叶斯），
+                    k-Nearest  Neighbors（K近邻），Decision Tree（决策树），默认是Random Forest。可选择交叉验证倍数，默认为5倍交叉验证。
                     可选择将数据切割成训练集和验证集的比例，这里默认是将全部数据的0.8划分为训练集。
                    ")
     HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
