@@ -35,6 +35,7 @@ source("./script/xCell.R")
 source("./script/ori_scattercor_plot.R")
 source("./script/ori_heatmap.R")
 source("./script/CIBERSORT.R")
+source("./script/ori_tcgaCompare.R")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -456,6 +457,37 @@ ui <- fluidPage(
                                                       downloadButton('DownloadCNVtable', 'Download CNV table')
                                                     )),
                                                       
+                                   conditionalPanel("input.cPanels1 == 14",
+                                                    wellPanel(
+                                                      h4(strong("TMBcompare")),
+                                                      textInput("selectcohortName", "cohortName",
+                                                                value=c("ori") ),
+                                                      selectInput("selectmedianCol", "medianCol",
+                                                                  choices=c("red","gray70"),
+                                                                  selected=c("red"),
+                                                                  multiple = F),
+                                                      selectInput("selectTCGAcohort", "TCGA cohort color",
+                                                                  choices=c("gray70","black"),
+                                                                  selected = c("gray70"),
+                                                                  multiple = F),
+                                                      
+                                                      selectInput("selectInputcohort", "Input cohort color",
+                                                                  choices=c("gray70","black"),
+                                                                  selected = c("black"),
+                                                                  multiple = F),
+                                                      
+                                                    )),
+                                   
+                                   conditionalPanel("input.cPanels1 == 14",
+                                                    h4(strong("Download")),
+                                                    wellPanel(
+                                                      textInput("fnameTMBcompare", "filename", value = "TMBcompare"),
+                                                      downloadButton('DownloadTMBcompareplot', 'Download TMBcompare plot'),
+                                                      br(),
+                                                      br(),
+                                                      downloadButton('DownloadTMBcomparetable', 'Download TMBcompare table')
+                                                    )),
+                                   
 
                             ),
                                    
@@ -475,7 +507,7 @@ ui <- fluidPage(
                                        tabPanel("Find driver gene", htmlOutput("pv111"), plotOutput("drivergeneplot", height= 800, width = 1000), htmlOutput("pv112"), DT::dataTableOutput("drivergenetable",width = 800), value =11),
                                        tabPanel("Circos", htmlOutput("pv121"), plotOutput("circosplot",height= 1200, width = 1200), value = 12),
                                        tabPanel("CNV", htmlOutput("pv131"), plotOutput("CNVplot",height= 800, width = 1000), htmlOutput("pv132"), DT::dataTableOutput("CNVtable",width = 800), value =13),
-                                       
+                                       tabPanel("TMBcompare", htmlOutput("pvsession222"), plotOutput("TMBcompareplot", height= 800, width = 1000),DT::dataTableOutput("TMBcomparetable",width = 800), value = 14),
                                        id = "cPanels1"
                                    )                
                                    
@@ -1941,6 +1973,58 @@ server <- function(input, output, session) {
       write.xlsx(res_table,file,rowNames =F)
     })
 
+  ## TMBcompare
+  output$TMBcompareplot <- renderPlot({
+    data1 <- data_input1()
+    tcgaCompare_ori(var = data1,
+                    cohortName = input$selectcohortName,
+                    medianCol = input$selectmedianCol,
+                    col = c( input$selectTCGAcohort,input$selectInputcohort))
+    
+  })
+  
+  
+  output$TMBcomparetable <-renderDataTable({
+    data1 <- data_input1()
+    res_table<- tcgaCompare_ori(var = data1,
+                                cohortName = input$selectcohortName,
+                                medianCol = input$selectmedianCol,
+                                col = c(input$selectTCGAcohort,input$selectInputcohort))
+    print(res_table)
+    
+  })
+  
+  output$DownloadTMBcompareplot <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnameTMBcompare)
+      paste(pdf_file,'.pdf', sep='')
+    },
+    content <- function(file) {
+      pdf(file , height= 10, width=8,onefile = FALSE)
+      data1 <- data_input1()
+      tcgaCompare_ori(var = data1,
+                      cohortName = input$selectcohortName,
+                      medianCol = input$selectmedianCol,
+                      col = c( input$selectTCGAcohort,input$selectInputcohort))
+      dev.off()
+      #file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
+    },contentType = 'image/pdf')
+  
+  output$DownloadTMBcomparetable <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnameTMBcompare)
+      paste(pdf_file,'.xlsx', sep='')
+    },
+    content <- function(file) {
+      data1 <- data_input1()
+      res_table <-   tcgaCompare_ori(var = data1,
+                                     cohortName = input$selectcohortName,
+                                     medianCol = input$selectmedianCol,
+                                     col = c( input$selectTCGAcohort,input$selectInputcohort))
+      write.xlsx(res_table,file,rowNames =F)
+    })
+  
+  
   #survival
   survivalforuse <- function(){
     data4 <- data_input4()
@@ -2303,9 +2387,11 @@ server <- function(input, output, session) {
     str311 <- paste("&emsp;10. Find driver gene &emsp; 基于突变位点的位置信息，使用oncodriveCLUST算法识别driver gene，可分别下载plot和table")
     str312 <- paste("&emsp;11. Circos &emsp; 可以选择在Circos上展示的mutation type，可以单独选择一种或两种，在这里默认的是展示snv，cnv，fusion三种")
     str313 <- paste("&emsp;12. CNV &emsp; 展示CNV Amp和Del在染色体上突变情况和突变高频基因，图和表可分别下载。")
+    str314 <- paste("&emsp;13. TMBcompare &emsp;与TCGA cohort的TMB进行比较，可以调整cohort在图中展示的名字以及颜色，图和表可分别下载")
+    
     
     HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
-         str32,str33,str34,str35,str36,str37,str38,str39,str310,str311,str312,str313,sep = '<br/>'))
+         str32,str33,str34,str35,str36,str37,str38,str39,str310,str311,str312,str313,str314,sep = '<br/>'))
   })
   
   output$ReadMe2 <- renderUI({
