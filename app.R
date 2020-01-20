@@ -2460,7 +2460,7 @@ server <- function(input, output, session) {
     str35 <- paste("&emsp; 4.Correlation &emsp;导入表达文件，可选择任意两列计算相关计算，计算方法包括pearson，spearman，kendall。")
     str36 <- paste("&emsp; 5.Heatmap &emsp;可上传需要展示的genelist和sample info，如无genelist文件，默认展示前50个基因。若要改变默认颜色，选择YES，并且点击 Refresh改变颜色。
                    该部分选择参数发生改变时，都需要点击refresh。")
-    HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
+    HTML(paste(str00,h5(strong(str0)), str1, str2, str3, str4,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
                str32,str33,str34,str35,str36,sep = '<br/>'))
   })
   
