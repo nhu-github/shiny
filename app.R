@@ -2430,8 +2430,8 @@ server <- function(input, output, session) {
     
     str31 <- paste("分析模块")
     str32 <- paste("&emsp; MechineLearning &emsp;需要标签列信息，即分组信息。在训练模型时，可选择使用的不同的算法，
-                    包括Random Forest（随机森林），Support Vector Machine（支持向量机）Logistic Regression(逻辑回归)，Naive Bayes（朴素贝叶斯），
-                    k-Nearest  Neighbors（K近邻）,Decision Tree（决策树），默认是Random Forest。可选择交叉验证倍数，默认为5倍交叉验证。
+                    包括Random Forest（随机森林），Support Vector Machine（支持向量机），Logistic Regression(逻辑回归)，Naive Bayes（朴素贝叶斯），
+                    k-Nearest  Neighbors（K近邻），Decision Tree（决策树），默认是Random Forest。可选择交叉验证倍数，默认为5倍交叉验证。
                     可选择将数据切割成训练集和验证集的比例，这里默认是将全部数据的0.8划分为训练集。
                    ")
     HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
@@ -2446,6 +2446,7 @@ server <- function(input, output, session) {
     str2 <- paste("&emsp; 2.示例文件为表达文件 行是基因，列是样本。")
     str3 <- paste("&emsp; 3.在示例文件下，点击不同模块，调整对应参数,即可展示结果，点击下载按钮，输入文件名，
                   即可将结果保存在目的文件夹下，若不输入文件名，则保存为默认文件")
+    str4 <- paste("&emsp; 4.注意：xCell，Cibersort，ssGSEA需要运行一定时间，在运行过程中，耐心等待运行结果，请勿来回调整界面或者重复点击start")
     
     str21 <- paste("数据格式")
     str22 <- paste("&emsp; 1.建议上传文件格式为.xlsx 或者下载示例数据，将文件内容替换，再重新上传，注意文件解密")
