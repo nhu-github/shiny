@@ -1245,7 +1245,7 @@ server <- function(input, output, session) {
     vartype <-  unique(data_input1()[["VAR_TYPE"]])
     
     updateSelectInput(session, "select01", label = "Divided into two subgroups",
-                      choices = c(dsnames1),
+                      choices = c(dsnames2),
                       selected = "TMB")
     updateSelectInput(session, "select11", label = "choose clinical feature",
                       choices = c(dsnames2),

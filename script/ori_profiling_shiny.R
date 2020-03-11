@@ -70,6 +70,7 @@ plot_landscape = function(mut,cli=NULL,bar,feature,prefix,waterfall=F,resam=F,cu
   
   
   if(!is.null(cli)){
+    cli <- cli[!is.na(cli[["ORDER_ID"]]),]
     HA = ori_HeatmapAnnotation(cli,bar,feature,resam=resam,cutoff=NULL)
     anno_legend_list = lapply(HA$topAnno@anno_list[c(feature)], 
                               function(anno) color_mapping_legend(anno@color_mapping, plot = FALSE))
