@@ -15,7 +15,8 @@ library(DT)
 
 #source("./script/ori_profiling_shiny.R")
 #source("./script/ori_profiling_shiny_quickplot_origin.R")
-source("./script/ori_profiling_shiny_quickplot.R")
+#source("./script/ori_profiling_shiny_quickplot.R")
+source("./script/ori_profiling_shiny_quickplot1.R")
 source("./script/ori_boxplot_shiny.R")
 source("./script/ori_barplot.R")
 source("./script/CountVariants.R")
@@ -43,7 +44,7 @@ ui <- fluidPage(
   theme = shinytheme('cerulean'),
     #shinythemes::themeSelector()
   #theme = shinytheme('sandstone'),
-    navbarPage("Himalaya 1.0", 
+    navbarPage("Himalaya 1.1", 
                
                tabPanel("Mutation",
                         fluidRow(
@@ -78,6 +79,10 @@ ui <- fluidPage(
                                                       
                                                       selectInput("select01", "Divided into two subgroups", 
                                                                   choices=c("TMB"),multiple = F),
+                                                      selectInput("select011", "Continuous or Discrete ",
+                                                                  choices=c("continuous","discrete"),
+                                                                  selected = "continuous",
+                                                                  multiple = FALSE),
                                                       selectInput("select11", "Choose clinical feature", 
                                                                   choices=c("GENDER"),multiple = T),
                                                       sliderInput("number", 
@@ -248,12 +253,14 @@ ui <- fluidPage(
                                                       selectInput("select71", "Divided into two subgroups",
                                                                   choices=c("TMB"),
                                                                   multiple = FALSE),
-                                                      
+                                                      selectInput("select72", "Continuous or Discrete ",
+                                                                  choices=c("continuous","discrete"),
+                                                                  selected = "continuous",
+                                                                  multiple = FALSE),
                                                       sliderInput("numberclicutoff", 
                                                                   label = "The value of cutoff:",
                                                                   min = 5, max = 50, value = 12, step = 1
                                                       ),
-                                        
                                                       selectInput("selectclifea", "Select clinical features",
                                                                   choices = c("Age"),
                                                                   selected = "Age",
@@ -1268,13 +1275,17 @@ server <- function(input, output, session) {
     updateSelectInput(session, "selectstatfeature", label = "Divided into two subgroups",
                       choices = dsnames1,
                       selected = "TMB")
+    # clinical statistic
     updateSelectInput(session, "select71", label = "Divided into two subgroups",
                       choices = dsnames2,
                       selected = "TMB")
     updateSelectInput(session, "selectclifea", label = "Select clinical features",
                       choices = dsnames2,
                       selected = c("AGE","GENDER"))
-    
+    updateSliderInput(session, "numberclicutoff", label = "The value of cutoff:",
+                      min=0,max =100 ,
+                      value = 12, step = 1
+                      )
     # statistical test 
     updateSelectInput(session, "select81", label = "Divided into two subgroups",
                       choices = dsnames1,
@@ -1391,7 +1402,8 @@ server <- function(input, output, session) {
     data2 <- data_input2()
     data3 <- data_input3()
     if(input$select21=="NO"){
-      res_pic <- plot_landscape(mut=data1, cli=data2, bar=input$select01, 
+      res_pic <- plot_landscape(mut=data1, cli=data2, bar=input$select01,
+                                bartype=input$select011,
                                 feature = input$select11,
                                 prefix = input$fname22,
                                 n = input$number,
@@ -1401,7 +1413,8 @@ server <- function(input, output, session) {
                                 waterfall = input$selectwaterfall)
       
     }else{
-      res_pic <- plot_pathway_cli(mut=data1, cli=data2, bar=input$select01, 
+      res_pic <- plot_pathway_cli(mut=data1, cli=data2, bar=input$select01,
+                                  bartype=input$select011,
                                   feature=input$select11,
                                   prefix=input$fname22,
                                   pathway_genes = data3,
@@ -1675,6 +1688,7 @@ server <- function(input, output, session) {
   output$clinicalStat <- renderTable({
     data2 <- data_input2()
     re_table <- ori_statcli(input$selectclifea,input$select71,data2,
+                            input$select72,
                             cutoff=input$numberclicutoff)
     re_table
   })
