@@ -27,7 +27,6 @@ ggsurvival <- function(mx, time = 'OS_months', event = 'OS_status',
   #   mx[mx[['time']] > timelimit, 'time'] <- timelimit
   # }
   
-  
   mx.cox <- coxph(Surv(time, event)~strata, data = mx)
   mx.cox <- summary(mx.cox)
   mx.cox.HR <- mx.cox$conf.int[c(1,3,4)]
@@ -37,7 +36,7 @@ ggsurvival <- function(mx, time = 'OS_months', event = 'OS_status',
   mx.cox.logrank <- ifelse(mx.cox.logrank < 0.001, 
                            sprintf('%.2e', mx.cox.logrank),
                            round(mx.cox.logrank, digits = 3))
-  plabel <- paste0('p-value = ', mx.cox.logrank)
+  plabel <- paste0('p = ', mx.cox.logrank)
   
   label.df <- data.frame(npcx = c(0.05, 0.05), npcy = c(0.2, 0.1), label = c(HRlabel, plabel))
   
@@ -60,6 +59,11 @@ ggsurvival <- function(mx, time = 'OS_months', event = 'OS_status',
                                   legend.background = element_blank(),
                                   panel.background=element_rect(fill='transparent'),
                                   axis.line = element_line(size = 0.5)))
+  xtime <- sort(mx[['time']])[length(na.omit(mx[['time']]))-1]*0.15
+  p$plot <- p$plot+ 
+    ggplot2::annotate("text", 
+                      x = xtime, y = 0.25, # x and y coordinates of the text
+                      label =plabel, size = 5)
  
 return(p)
 }

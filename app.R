@@ -219,15 +219,19 @@ ui <- fluidPage(
                                                                   choices=c("Gene mutation frequency"="GeneFre",
                                                                             "Variation frequency" = "VarFre",
                                                                             "Pathway mutation frequency" = "PathwayFre"
-                                                                            ),
+                                                                  ),
                                                                   multiple = FALSE),
                                                       
                                                       selectInput("selectstat", "Divided into two subgroup", 
                                                                   choices = c("NO" = "NO","YES"="YES"),
                                                                   selected = "NO"
                                                       ),
-          
+                                                      
                                                       conditionalPanel("input.selectstat == 'YES'",
+                                                                       selectInput("selectstatfeaturetype",label= "Continuous or Discrete",
+                                                                                   choices = c("Continuous","Discrete"),
+                                                                                   selected = "Continuous"
+                                                                       ),
                                                                        selectInput("selectstatfeature",label= "select feature", 
                                                                                    choices = c("TMB"))
                                                       ),
@@ -1258,13 +1262,13 @@ server <- function(input, output, session) {
                       choices = c(dsnames2),
                       selected =c("GENDER","Smoker"))	
     updateSelectInput(session, "selectbox", label = "select feature",
-                      choices = c(dsnames1),
+                      choices = c(dsnames2),
                       selected = "TMB")
     updateSelectInput(session, "select_gene", label = "Gene",
                       choices =  genelist,
                       selected = genelist[1])
     updateSelectInput(session, "selectBarfeature", label = "Divided into two subgroups",
-                      choices = dsnames1,
+                      choices = dsnames2,
                       selected = "TMB")
     updateSelectInput(session, "select51", label = "Gene",
                       choices =  genelist,
@@ -1272,8 +1276,8 @@ server <- function(input, output, session) {
     updateSelectInput(session, "select52", label = "refseq ID",
                       choices =  dsnames1,
                       selected = "refSeqID")
-    updateSelectInput(session, "selectstatfeature", label = "Divided into two subgroups",
-                      choices = dsnames1,
+    updateSelectInput(session, "selectstatfeature", label = "Select feature",
+                      choices = dsnames2,
                       selected = "TMB")
     # clinical statistic
     updateSelectInput(session, "select71", label = "Divided into two subgroups",
@@ -1454,13 +1458,14 @@ server <- function(input, output, session) {
   ##boxplot
   boxplotforuse <-  function(){
     data1 <- data_input1()
+    data2 <- data_input2()
     if(input$select_type=="boxplot"){
       res_pic <- ori_boxplot(x = input$select_gene,y=input$selectbox,
-                             xtype ="gene",input=data1)
+                             xtype ="gene",input=data1,cli=data2)
       
     }else{
       res_pic <- ori_boxplot(x = input$select_gene,y=input$selectbox,
-                             xtype ="gene",ftype="violin",input=data1)
+                             xtype ="gene",ftype="violin",input=data1,cli=data2)
     }
     print(res_pic)
     
@@ -1603,8 +1608,9 @@ server <- function(input, output, session) {
   
   
   # stat
-  output$stat <- renderDataTable({
+  statforuse <- function(){
     data1 <- data_input1()
+    data2 <- data_input2()
     if(input$selectstat=="NO"){
       res_pic <- CountVariants(data1,
                                id = 'ORDER_ID',
@@ -1614,15 +1620,21 @@ server <- function(input, output, session) {
                                # by = "group"
       )
     }else{
-      mut <- data1
       bar <- input$selectstatfeature
+      cli  <- data2[,c('ORDER_ID',bar),drop=F]
+      mut <- merge(data1,cli,all.x = TRUE)
       mut$group <- NA
-      cutoff <- NULL
-      mut[[bar]] <- as.numeric(mut[[bar]])
-      if(is.null(cutoff)){
-        mut$group <- ifelse(mut[[bar]]>median(mut[[bar]],na.rm = T),"High","Low")  
+      cutoff <- input$numbercountvariantcutoff
+      grouptype <- input$selectstatfeaturetype
+      if(grouptype =="Continuous"){
+        mut[[bar]] <- as.numeric(mut[[bar]])
+        if(is.null(cutoff)){
+          mut$group <- ifelse(mut[[bar]]>median(mut[[bar]],na.rm = T),"High","Low")  
+        }else{
+          mut$group <- ifelse(mut[[bar]]>cutoff,"High","Low")  
+        }
       }else{
-        mut$group <- ifelse(mut[[bar]]>cutoff,"High","Low")  
+        mut$group <- as.character(mut[[bar]])
       }
       res_pic <- CountVariants(mut,
                                id = 'ORDER_ID',
@@ -1631,8 +1643,14 @@ server <- function(input, output, session) {
                                varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 'Gene Amplification', 'Gene Homozygous Deletion', 'Truncation'),
                                by = "group"
       )
-    }
+      return(res_pic)
     
+    }
+  }
+  
+
+  output$stat <- renderDataTable({
+    res_pic <- statforuse()
     if(input$select61=="GeneFre"){
       res_table<- res_pic[[1]]
       res_table
@@ -1652,34 +1670,7 @@ server <- function(input, output, session) {
       paste(pdf_file,'.xlsx', sep='')
     },
     content <- function(file) {
-      data1 <- data_input1()
-      if(input$selectstat=="NO"){
-        res_pic <- CountVariants(data1,
-                                 id = 'ORDER_ID',
-                                 gene = 'GENE',
-                                 vartype = 'VAR_TYPE_SX',
-                                 varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 'Gene Amplification', 'Gene Homozygous Deletion', 'Truncation')
-                                 # by = "group"
-        )
-      }else{
-        mut <- data1
-        bar <- input$selectstatfeature
-        mut$group <- NA
-        cutoff <- input$numbercountvariantcutoff
-        mut[[bar]] <- as.numeric(mut[[bar]])
-        if(is.null(cutoff)){
-          mut$group <- ifelse(mut[[bar]]>median(mut[[bar]],na.rm = T),"High","Low")  
-        }else{
-          mut$group <- ifelse(mut[[bar]]>cutoff,"High","Low")  
-        }
-        res_pic <- CountVariants(mut,
-                                 id = 'ORDER_ID',
-                                 gene = 'GENE',
-                                 vartype = 'VAR_TYPE_SX',
-                                 varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 'Gene Amplification', 'Gene Homozygous Deletion', 'Truncation'),
-                                 by = "group"
-        )
-      }
+      res_pic <- statforuse()
       write.xlsx(res_pic,file,rowNames =F)
     })
   
