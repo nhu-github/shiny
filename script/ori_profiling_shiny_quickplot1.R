@@ -138,7 +138,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
                'Gene Amplification', 'Gene Homozygous Deletion', 
                'Truncation')
   mut <- na.omit(mut[,c("ORDER_ID","GENE","VAR_TYPE_SX")])
-  mut <- rmvar(mut,varorder)
+  mut1 <- rmvar(mut,varorder)
   
   if(is.null(cli)){
     mut<- mut[!is.na(mut[["ORDER_ID"]]),]
@@ -158,7 +158,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
     }
     
     mut = as.data.frame(mut, stringsAsFactors = F)
-    freq = cal_freq(mut, length(allsamples))
+    freq = cal_freq(mut1, length(allsamples))
     mut = convert_mut(mut, freq, allsamples, n = n)
     mutN <- change_mut(mut)
     mutN <- merge(annoInfo,mutN,by="row.names")
@@ -196,7 +196,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
                            row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                            row_title_gp=gpar(fontsize=rownamessize+2, fontface='bold'),
                            show_column_names = F,
-                           show_heatmap_legend=T,
+                           show_heatmap_legend=F,
                            show_pct = T,
                            remove_empty_columns = T,
                            top_annotation =HA$topAnno,
@@ -212,7 +212,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
                            row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                            row_title_gp=gpar(fontsize=rownamessize+2, fontface='bold'),
                            show_column_names = F,
-                           show_heatmap_legend=T,
+                           show_heatmap_legend=F,
                            show_pct = T,
                            remove_empty_columns = T,
                            top_annotation =HA$topAnno,
@@ -222,6 +222,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
         }
         # draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
       }else{
+        mut <-  gsub(";.*","",mut)
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
@@ -237,7 +238,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
                         #row_order = colnames(mutN1),
                         row_order = as.character(freq$GENE[1:n]),
                         show_column_names = F,
-                        show_heatmap_legend = T,
+                        show_heatmap_legend = F,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
@@ -256,7 +257,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
                          row_names_gp = gpar(fontsize = rownamessize, fontface='bold'),
                          row_title_gp=gpar(fontsize=rownamessize, fontface='bold'),
                          show_column_names = F,
-                         show_heatmap_legend=T,
+                         show_heatmap_legend=F,
                          show_pct = T,
                          remove_empty_columns = T,
                          top_annotation =HA$topAnno
@@ -270,7 +271,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
         mutNN <- mutNN[,as.character(freq$GENE[1:n])]
         mutNN <- mutNN[do.call(order,mutNN),]
         # colnames(mutN)[1] <- "ORDER_ID"
-        
+        mut <-  gsub(";.*","",mut)
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
@@ -286,19 +287,19 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
                         #row_order = colnames(mutN1),
                         row_order = as.character(freq$GENE[1:n]),
                         show_column_names = F,
-                        show_heatmap_legend = T,
+                        show_heatmap_legend = F,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
         #draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
       }
     }
-    p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
+    p =draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
     print(p)
     #### here is no clinical file 
   }else{
     mut = as.data.frame(mut, stringsAsFactors = F)
-    freq = cal_freq(mut, length(allsamples))
+    freq = cal_freq(mut1, length(allsamples))
     mut = convert_mut(mut, freq, allsamples, n = n)
     
     if(quickplot==F){
@@ -321,7 +322,7 @@ plot_landscape = function(mut,cli=NULL,bar,bartype="continuous",feature,prefix,q
       mutNN <- mutNN[,as.character(freq$GENE[1:n])]
       mutNN <- mutNN[do.call(order,mutNN),]
       # colnames(mutN)[1] <- "ORDER_ID"
-      
+      mut <-  gsub(";.*","",mut)
       onco <- Heatmap(mut,
                       col = oncocol,
                       na_col = 'grey99',
@@ -407,7 +408,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                'Gene Amplification', 'Gene Homozygous Deletion', 
                'Truncation')
   mut <- na.omit(mut[,c("ORDER_ID","GENE","VAR_TYPE_SX")])
-  mut <- rmvar(mut,varorder)
+  mut1 <- rmvar(mut,varorder)
   
   if(is.null(cli)){
     mut<- mut[!is.na(mut[["ORDER_ID"]]),]
@@ -431,7 +432,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
     all_genes =  data.table::melt(pathway_genes, measure.vars = colnames(pathway_genes), 
                                   variable.name = "Pathway", value.name = "Gene")
     all_genes = all_genes[!is.na(all_genes$Gene), ]
-    freq = cal_freq(mut, length(all_sn))
+    freq = cal_freq(mut1, length(all_sn))
     highgene <- freq$GENE[freq$FREQUENCY>=nfreq]
     all_genes = all_genes[all_genes$Gene %in% highgene,]
     
@@ -498,7 +499,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                            row_title_gp= gpar(fontsize = rownamessize, fontface='bold'),
                            show_pct = T, 
                            row_names_side = "right",
-                           show_heatmap_legend=T,
+                           show_heatmap_legend=F,
                            gap = unit(3, 'mm'),
                            row_split = all_genes,
                            remove_empty_columns = T,
@@ -507,7 +508,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                            row_order = all_genes_order$GENE
           )
           
-          p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
+          draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
           print(p)    
         }else{
           onco = oncoPrint(mat = mut, alter_fun = alter_fun, 
@@ -520,7 +521,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                            row_title_gp= gpar(fontsize = rownamessize, fontface='bold'),
                            show_pct = T, 
                            row_names_side = "right",
-                           show_heatmap_legend=T,
+                           show_heatmap_legend=F,
                            gap = unit(3, 'mm'),
                            row_split = all_genes,
                            remove_empty_columns = T,
@@ -530,11 +531,12 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                            column_split = annoInfo
           )
           
-          p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
+          draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
           print(p)    
         }
         
       }else{
+        mut <-  gsub(";.*","",mut)
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
@@ -554,11 +556,11 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                         row_order = all_genes_order$GENE,
                         row_split = all_genes,
                         show_column_names = F,
-                        show_heatmap_legend = T,
+                        show_heatmap_legend = F,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
-        draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
+        draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
       }
       
       
@@ -580,7 +582,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                          row_title_gp=gpar(fontsize = rownamessize, fontface='bold'),
                          show_pct = T, 
                          row_names_side = "right",
-                         show_heatmap_legend=T,
+                         show_heatmap_legend=F,
                          gap = unit(3, 'mm'),
                          row_split = all_genes,
                          remove_empty_columns = T,
@@ -588,10 +590,11 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                          column_order = rownames(mutNN)
         )
         
-        p = draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
+        draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
         print(p)    
         
       }else{
+        mut <-  gsub(";.*","",mut)
         onco <- Heatmap(mut,
                         col = oncocol,
                         na_col = 'grey99',
@@ -607,12 +610,12 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
                         #row_order = colnames(mutN1),
                         row_order = all_genes_order$GENE,
                         show_column_names = F,
-                        show_heatmap_legend = T,
+                        show_heatmap_legend = F,
                         row_split = all_genes,
                         use_raster = T,
                         raster_device = "png",
                         raster_quality = 2)
-        p =draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(anno_legend_list))
+        draw(onco, heatmap_legend_side='right',heatmap_legend_list=c(list(lgd_mut),anno_legend_list))
         print(p) 
         
       }
@@ -627,7 +630,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
     all_genes =  data.table::melt(pathway_genes, measure.vars = colnames(pathway_genes), 
                                   variable.name = "Pathway", value.name = "Gene")
     all_genes = all_genes[!is.na(all_genes$Gene), ]
-    freq = cal_freq(mut, length(all_sn))
+    freq = cal_freq(mut1, length(all_sn))
     highgene <- freq$GENE[freq$FREQUENCY>=nfreq]
     all_genes = all_genes[all_genes$Gene %in% highgene,]
     
@@ -679,6 +682,7 @@ plot_pathway_cli = function(mut, cli=NULL, bar, bartype="continuous",feature, pr
       print(p) 
       
     }else{
+      mut <-  gsub(";.*","",mut)
       onco <- Heatmap(matrix=mut,
                       col = oncocol,
                       na_col = 'grey99',
