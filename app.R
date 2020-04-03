@@ -455,6 +455,11 @@ ui <- fluidPage(
                                                       selectInput("select134", "genomic colnames",
                                                                   choices=c("GENOMIC"),
                                                                   multiple = FALSE),
+                                                      sliderInput("select135", 
+                                                                  label = "The number of genes with the highest frequency ",
+                                                                  min = 1, max = 20, value = 10, step = 1
+                                                      ),
+                                                      
                                                       
                                                     )),
                                    
@@ -487,6 +492,8 @@ ui <- fluidPage(
                                                                   selected = c("black"),
                                                                   multiple = F),
                                                       
+                                                      
+
                                                     )),
                                    
                                    conditionalPanel("input.cPanels1 == 14",
@@ -1898,7 +1905,7 @@ server <- function(input, output, session) {
                      genomic_col=input$select134,
                      cnv_type_col=input$select133,
                      outprefix="tmp",
-                     top=10,
+                     top=input$select135,
                      Plotpdf = T,
                      Writetable = F
     )
@@ -1926,7 +1933,7 @@ server <- function(input, output, session) {
                      genomic_col=input$select134,
                      cnv_type_col=input$select133,
                      outprefix="tmp",
-                     top=10,
+                     top=input$select135,
                      Plotpdf = T,
                      Writetable = T
     )
