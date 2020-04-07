@@ -25,7 +25,8 @@ source("./script/lollipop.R")
 source("./script/ori_lollipop_shiny.R")
 source("./script/ori_statcli_shiny.R")
 source("./script/ori_fisherplot_shiny.R")
-source("./script/ori_biomarker_gene_shiny.R")
+#source("./script/ori_biomarker_gene_shiny.R")
+source("./script/ori_biomarker_gene_shiny1.R")
 source("./script/ori_survival.R")
 source("./script/gene_ex_co_shiny.r")
 source("./script/drive_gene_shiny.r")
@@ -284,6 +285,11 @@ ui <- fluidPage(
                                    conditionalPanel("input.cPanels1 == 8",
                                                     wellPanel(
                                                       h4(strong("Statistical test")),
+                                                      selectInput("select80", "Continuous or Discrete ",
+                                                                  choices=c("continuous","discrete"),
+                                                                  selected = "continuous",
+                                                                  multiple = FALSE),
+                                                      
                                                       selectInput("select81", "Divided into two subgroups",
                                                                   choices=c("TMB"),
                                                                   multiple = FALSE),
@@ -292,7 +298,6 @@ ui <- fluidPage(
                                                                   label = "The value of cutoff:",
                                                                   min = 5, max = 100, value = 12, step = 1
                                                       ),
-                                                      
                                                       
                                                       sliderInput("selectmutfreq", 
                                                                   label = "Gene mutation frequency:",
@@ -316,10 +321,13 @@ ui <- fluidPage(
                                    conditionalPanel("input.cPanels1 == 9",
                                                     wellPanel(
                                                       h4(strong("fisher test plot")),
+                                                      selectInput("select90", "Continuous or Discrete ",
+                                                                  choices=c("continuous","discrete"),
+                                                                  selected = "continuous",
+                                                                  multiple = FALSE),
                                                       selectInput("select91", "Divided into two subgroups",
                                                                   choices=c("TMB"),
                                                                   multiple = FALSE),
-                                                      
                                                       sliderInput("numberfisherteplotcutoff", 
                                                                   label = "The value of cutoff:",
                                                                   min = 5, max = 100, value = 12, step = 1
@@ -1299,13 +1307,13 @@ server <- function(input, output, session) {
                       )
     # statistical test 
     updateSelectInput(session, "select81", label = "Divided into two subgroups",
-                      choices = dsnames1,
+                      choices = dsnames2,
                       selected = "TMB")
     updateSliderInput(session, "selectmutfreq", label = "Gene mutation frequency",
                       min = 0, max =nsample, value = 5, step = 1)
     
     updateSelectInput(session, "select91", label = "Divided into two subgroups",
-                      choices = dsnames1,
+                      choices = dsnames2,
                       selected = "TMB")
     updateSliderInput(session, "selectmutfreq9", label = "Gene mutation frequency",
                       min = 0, max =nsample, value = 5, step = 1)
@@ -1708,8 +1716,13 @@ server <- function(input, output, session) {
   
   output$statisticaltest <- renderDataTable({
     data1 <- data_input1()
-    res_table <- ori_biomarker_gene(input$select81,data1,input$selectmutfreq,
-                                    cutoff =input$numbertestcutoff)
+    data2 <- data_input2()
+    res_table <- ori_biomarker_gene(y=input$select81,
+                                   mut=data1,
+                                   cli= data2,
+                                   n=input$selectmutfreq,
+                                   ytype =input$select80,
+                                   cutoff =input$numbertestcutoff)
     
     if(input$select82=="Wiltest"){
       res_table <-  res_table[[2]]
@@ -1728,8 +1741,13 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       data1 <- data_input1()
-      res_table <- ori_biomarker_gene(input$select81,data1,input$selectmutfreq,
-                                      cutoff =input$numbertestcutoff)
+      data2 <- data_input2()
+      res_table <- ori_biomarker_gene(y=input$select81,
+                                     mut=data1,
+                                     cli= data2,
+                                     n=input$selectmutfreq,
+                                     ytype =input$select80,
+                                     cutoff =input$numbertestcutoff)
       openxlsx::write.xlsx(res_table,file,rowNames =T)
     },contentType = 'text/csv')
   
@@ -1737,7 +1755,12 @@ server <- function(input, output, session) {
   # fishertestplot
   output$fishertestplot <- renderPlot({
     data1 <- data_input1()
-    res_table <- ori_biomarker_gene(input$select91,data1,input$selectmutfreq9,
+    data2 <- data_input2()
+    res_table <- ori_biomarker_gene(y=input$select91,
+                                    mut=data1,
+                                    cli= data2,
+                                    n=input$selectmutfreq9,
+                                    ytype =input$select90,
                                     cutoff =input$numberfisherteplotcutoff)
     f <- res_table$fisher_test
     f$GENE <- row.names(f)
@@ -1752,7 +1775,11 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       data1 <- data_input1()
-      res_table <- ori_biomarker_gene(input$select91,data1,input$selectmutfreq9,
+      res_table <- ori_biomarker_gene(y=input$select91,
+                                      mut=data1,
+                                      cli= data2,
+                                      n=input$selectmutfreq9,
+                                      ytype =input$select90,
                                       cutoff =input$numberfisherteplotcutoff)
       f <- res_table$fisher_test
       f$GENE <- row.names(f)
@@ -2365,7 +2392,7 @@ server <- function(input, output, session) {
   output$ReadMe1 <- renderUI({
     str00 <- paste("&emsp;")
     str0 <- paste("示例")
-    str1 <- paste("&emsp; 1.在公司内部网络环境下，打开浏览器，输入 http://10.10.174.10:3838/Himalaya/，即可使用分析工具")
+    str1 <- paste("&emsp; 1.在公司内部网络环境下或者在公司外部使用公司配置的笔记本电脑，打开浏览器，输入 http://cotest.origimed.com/Himalaya/，即可使用分析工具")
     str2 <- paste("&emsp; 2.示例文件包括 突变文件，临床信息，如果需要展示profiling在信号通路上的突变，则需要信号通路文件")
     str3 <- paste("&emsp; 3.在示例文件下，点击不同模块，调整对应参数,即可展示结果，点击下载按钮，输入文件名，
                   即可将结果保存在目的文件夹下，若不输入文件名，则保存为默认文件")
@@ -2378,7 +2405,8 @@ server <- function(input, output, session) {
     str31 <- paste("分析模块")
     str32 <- paste("&emsp; 1. Profiling &emsp;需要突变文件和临床文件，若需要展示在信号通路上的突变，则需要信号通路文件，
                    该部分可以根据临床信息展示在profiling上方，若要改变默认颜色，选择YES，并且点击 Refresh可以改变颜色，
-                   该部分选择参数发生改变时，都需要点击refresh。若没有临床文件，允许仅使用突变文件，注意：在上传突变文件后，
+                   该部分选择参数发生改变时，都需要点击refresh。  
+                   若没有临床文件，允许仅使用突变文件，注意：在上传突变文件后，
                    在Input your clinical file 选项，选择Your own data。若上传文件样本数过多，可选择 quick plot ，然后调整参数，出图。
                    建议一般情况下quick plot 选择为NO
                    ")
