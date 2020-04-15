@@ -6,7 +6,7 @@
 #
 #    http://shiny.rstudio.com/
 #
-
+options(shiny.maxRequestSize=70*1024^2)
 library(shiny)
 library(openxlsx)
 library(ggplot2)
