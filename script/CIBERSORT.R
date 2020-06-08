@@ -131,10 +131,11 @@ CIBERSORT <- function(sig_matrix, mixture_file, perm=0, QN=TRUE, absolute=FALSE,
     if(absolute && abs_method != 'no.sumto1' && abs_method != 'sig.score') stop("abs_method must be set to either 'sig.score' or 'no.sumto1'")
     
     #read in data
-    #X <- read.table(sig_matrix,header=T,sep="\t",row.names=1,check.names=F)
-    X <- sig_matrix
-    Y <- read.table(mixture_file, header=T, sep="\t",check.names=F)
-    #to prevent crashing on duplicated gene symbols, add unique numbers to identical names
+    X <- read.table(sig_matrix,header=T,sep="\t",row.names=1,check.names=F)
+    #X <- sig_matrix
+    #Y <- read.table(mixture_file, header=T, sep="\t",check.names=F)
+    Y <- mixture_file
+	#to prevent crashing on duplicated gene symbols, add unique numbers to identical names
     dups <- dim(Y)[1] - length(unique(Y[,1]))
     if(dups > 0) {
         warning(paste(dups," duplicated gene symbol(s) found in mixture file!",sep=""))

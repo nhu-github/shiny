@@ -2272,7 +2272,9 @@ server <- function(input, output, session) {
   
   res_table_ciber <- eventReactive(input$startcibersort, {
     data6 <- data_input6()
-    res_table <- CIBERSORT(data6,"./data/LM22.txt", perm = 200, absolute = F)
+    data6$name <- rownames(data6)
+    data6 <- data6[,c(ncol(data6),1:(ncol(data6)-1))]
+    res_table <- CIBERSORT("./data/LM22.txt",data6,perm = 100, absolute = F)
   })
   
   output$cibersort <- renderDataTable({
