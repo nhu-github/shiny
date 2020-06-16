@@ -190,12 +190,71 @@ convert_mut = function(mut=mut, freq, all_sn, n = 20){
   mut =data.frame(mut)
   mut = base::t(mut[,-1])
   freq = head(freq, n = n)
+  rownames(mut)<- gsub("\\.","-",rownames(mut))
+  mut = mut[rownames(mut) %in% freq$GENE, ]
+  return(mut)
+}
+
+# common mutation of the two groups 
+convert_mut1 = function(mut=mut, freq1,freq2,all_sn, n = 20){
+  # 将数据转化成画profiling需要的格式
+  mut = unique(mut[, c("ORDER_ID", "GENE", "VAR_TYPE_SX")])
+  mut = data.table::dcast(mut, ORDER_ID~GENE, fun.aggregate = function(x){paste(x, collapse = ";")})
+  #mut <- na.omit(mut)
+  rownames(mut) = mut$ORDER_ID
+  mut[setdiff(all_sn, mut$ORDER_ID), ] = ""
+  mut =data.frame(mut)
+  mut = base::t(mut[,-1])
+  commongene <- intersect(freq1$GENE,freq2$GENE)
+  freq <- freq1[freq1$GENE %in% commongene,]
+  freq = head(freq, n = n)
   mut = mut[rownames(mut) %in% freq$GENE, ]
   return(mut)
 }
 
 
-ori_HeatmapAnnotation <- function(cli,bar,feature,resam=F,annotationsize=8,cutoff=NULL){
+# v1
+# ori_HeatmapAnnotation <- function(cli,bar,feature,resam=F,cutoff=NULL){
+#   if(resam==F){
+#     set.seed(123)
+#   }else{
+#     N <- sample(1000,1)
+#     set.seed(N)
+#   }
+#   # the cutoff for bar,if NULL,use the median of bar
+#   require("grid")
+#   annoInfo <- data.frame(cli[,c("ORDER_ID",bar,feature)])
+#   rownames(annoInfo) <- annoInfo[,"ORDER_ID"]
+#   annoInfo <- data.frame(annoInfo[,-1])
+#   annoInfo[[bar]] <- as.numeric(annoInfo[[bar]])
+#   annoInfo <- annoInfo[order(annoInfo[[bar]], decreasing = T), ]
+#   if(is.null(cutoff)){
+#     annoInfo$new <- ifelse(annoInfo[[bar]] > median(annoInfo[[bar]]),"High","Low") 
+#   }else{
+#     annoInfo$new <- ifelse(annoInfo[[bar]] > cutoff,"High","Low") 
+#   }
+#   annoInfo <- annoInfo[,c(1,ncol(annoInfo),2:(ncol(annoInfo)-1))]
+#   colnames(annoInfo)[2] <- paste0(bar,"1")
+#   topAnno <- ComplexHeatmap::HeatmapAnnotation(tmp =anno_barplot(annoInfo[,1], gp = gpar(fill = "#1F78B4"),
+#                                                                  height = unit(2, "cm"),width=unit(1, "cm")
+#                                                                  ),
+#                                                df = annoInfo[,-1:-2],
+#                                                annotation_legend_param = list(title_gp=gpar(fontsize=8, fontface='bold'), 
+#                                                                               labels_gp=gpar(fontsize=8, fontface='bold')),
+#                                                annotation_name_gp = gpar(fontsize = 8, fontface='bold'),
+#                                                show_legend = F
+#   )
+#   topAnno@anno_list$tmp@name <- bar
+#   if(length(feature)==1){
+#    topAnno@anno_list$df@name <- feature
+#   }
+#   names(topAnno@anno_list) <- c(bar,feature)
+#   
+#   return(list("annoInfo"=annoInfo,"topAnno"=topAnno))
+# }
+
+# v2
+ori_HeatmapAnnotation <- function(annoInfo,feature,bar=NULL,resam=F,annotationsize=8){
   if(resam==F){
     set.seed(123)
   }else{
@@ -204,35 +263,37 @@ ori_HeatmapAnnotation <- function(cli,bar,feature,resam=F,annotationsize=8,cutof
   }
   # the cutoff for bar,if NULL,use the median of bar
   require("grid")
-  annoInfo <- data.frame(cli[,c("ORDER_ID",bar,feature)])
-  rownames(annoInfo) <- annoInfo[,"ORDER_ID"]
-  annoInfo <- data.frame(annoInfo[,-1])
-  annoInfo[[bar]] <- as.numeric(annoInfo[[bar]])
-  annoInfo <- annoInfo[order(annoInfo[[bar]], decreasing = T), ]
-  if(is.null(cutoff)){
-    annoInfo$new <- ifelse(annoInfo[[bar]] > median(annoInfo[[bar]]),"High","Low") 
+  if(!is.null(bar)){
+    topAnno <- ComplexHeatmap::HeatmapAnnotation(tmp =anno_barplot(annoInfo[,1], gp = gpar(fill = "#1F78B4"),
+                                                                   height = unit(2, "cm"),width=unit(1, "cm")
+    ),
+    df = annoInfo[,-1:-2],
+    annotation_legend_param = list(title_gp=gpar(fontsize=annotationsize, fontface='bold'), 
+                                   labels_gp=gpar(fontsize=annotationsize, fontface='bold')),
+    annotation_name_gp = gpar(fontsize = annotationsize, fontface='bold'),
+    show_legend = F
+    )
+    topAnno@anno_list$tmp@name <- bar
+    if(length(feature)==1){
+      topAnno@anno_list$df@name <- feature
+    }
+    names(topAnno@anno_list) <- c(bar,feature)
+    return(list("topAnno"=topAnno))
   }else{
-    annoInfo$new <- ifelse(annoInfo[[bar]] > cutoff,"High","Low") 
+    topAnno <- ComplexHeatmap::HeatmapAnnotation(
+      df = annoInfo,
+      annotation_legend_param = list(title_gp=gpar(fontsize=annotationsize, fontface='bold'), 
+                                     labels_gp=gpar(fontsize=annotationsize, fontface='bold')),
+      annotation_name_gp = gpar(fontsize = annotationsize, fontface='bold'),
+      show_legend = F
+    )
+    names(topAnno@anno_list) <- c(feature)
+    return(list("topAnno"=topAnno))
   }
-  annoInfo <- annoInfo[,c(1,ncol(annoInfo),2:(ncol(annoInfo)-1))]
-  colnames(annoInfo)[2] <- paste0(bar,"1")
-  topAnno <- ComplexHeatmap::HeatmapAnnotation(tmp =anno_barplot(annoInfo[,1], gp = gpar(fill = "#1F78B4"),
-                                                                 height = unit(2, "cm"),width=unit(1, "cm")
-                                                                 ),
-                                               df = annoInfo[,-1:-2],
-                                               annotation_legend_param = list(title_gp=gpar(fontsize=annotationsize, fontface='bold'), 
-                                                                              labels_gp=gpar(fontsize=annotationsize, fontface='bold')),
-                                               annotation_name_gp = gpar(fontsize = annotationsize, fontface='bold'),
-                                               show_legend = F
-  )
-  topAnno@anno_list$tmp@name <- bar
-  if(length(feature)==1){
-   topAnno@anno_list$df@name <- feature
-  }
-  names(topAnno@anno_list) <- c(bar,feature)
   
-  return(list("annoInfo"=annoInfo,"topAnno"=topAnno))
 }
+
+
 
 change_mut<- function(mut){
   mutN <- mut
@@ -243,6 +304,33 @@ change_mut<- function(mut){
   colnames(mutN) <- colnames(mut)
   mutN <- data.frame(t(mutN))
   return(mutN)
+}
+
+
+ori_HeatmapAnnotation_preorder <- function(cli,bar=NULL,feature,cutoff=NULL){
+  require("grid")
+  if(!is.null(bar)){
+    annoInfo <- data.frame(cli[,c("ORDER_ID",bar,feature)])
+    rownames(annoInfo) <- annoInfo[,"ORDER_ID"]
+    annoInfo <- data.frame(annoInfo[,-1])
+    annoInfo[[bar]] <- as.numeric(annoInfo[[bar]])
+    annoInfo <- annoInfo[order(annoInfo[[bar]], decreasing = T), ]
+    if(is.null(cutoff)){
+      annoInfo$new <- ifelse(annoInfo[[bar]] > median(annoInfo[[bar]]),"High","Low") 
+    }else{
+      annoInfo$new <- ifelse(annoInfo[[bar]] > cutoff,"High","Low") 
+    }
+    annoInfo <- annoInfo[,c(1,ncol(annoInfo),2:(ncol(annoInfo)-1))]
+    colnames(annoInfo)[2] <- paste0(bar,"1")
+    return(annoInfo)
+    
+  }else{
+    annoInfo <- data.frame(cli[,c("ORDER_ID",feature)])
+    rownames(annoInfo) <- annoInfo[,"ORDER_ID"]
+    annoInfo <- annoInfo[,-1,drop=F]
+    return(annoInfo)
+  }
+  
 }
 
 

@@ -43,7 +43,13 @@ CountVariants <- function(xlsxfile,
     oridata <- oridata[,c(id, gene, vartype, by)]
   }
 
+  #oridata <- rmvar(oridata, varorder)
+
+  oridata0 <- oridata
   oridata <- rmvar(oridata, varorder)
+  oridata <- na.omit(oridata)
+  oridata01 <- oridata0[!oridata0$ORDER_ID %in% oridata$ORDER_ID,]
+  oridata <- rbind(oridata,oridata01)
 
   keggpath <-readRDS('./data/keggpath.rds')
 
