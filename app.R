@@ -465,9 +465,16 @@ ui <- fluidPage(
                                                                   multiple = FALSE),
                                                       sliderInput("select135", 
                                                                   label = "The number of genes with the highest frequency ",
-                                                                  min = 1, max = 20, value = 10, step = 1
+                                                                  min = 1, max = 30, value = 10, step = 1
                                                       ),
-                                                      
+                                                      sliderInput("select136", 
+                                                                  label = "The size of gene name",
+                                                                  min = 0, max = 2, value = 0.6, step = 0.1
+                                                      ),
+                                                      sliderInput("select137", 
+                                                                  label = "The size of cytoband ",
+                                                                  min = 0, max = 2, value = 0.6, step = 0.1
+                                                      ),
                                                       
                                                     )),
                                    
@@ -1925,44 +1932,40 @@ server <- function(input, output, session) {
   #CNV
   output$CNVplot <- renderPlot({
     data1 <- data_input1()
-    data2 <- data1[data1$VAR_TYPE==input$selectVariantType,]
-    plot_CNV_seqment(cnv_df=data2, 
+    data2 <- data_input2()
+    plot_CNV_seqment(cnv_df=data1, 
+                     cli_df=data2,
                      sample_col=input$select132,
                      gene_col=input$select131,
                      genomic_col=input$select134,
                      cnv_type_col=input$select133,
+                     genesize= input$select136,
+                     cytobandTxtSize=input$select137,
                      outprefix="tmp",
                      top=input$select135,
                      Plotpdf = T,
                      Writetable = F
+     
     )
     
   })
   
   output$CNVtable <- renderDataTable({
     data1 <- data_input1()
-    data2 <- data1[data1$VAR_TYPE==input$selectVariantType,]
-    
-    # res_table <- plot_CNV_seqment(cnv_df=data2, 
-    #                               sample_col=input$select132,
-    #                               gene_col=input$select131,
-    #                               genomic_col=input$select134,
-    #                               cnv_type_col=input$select133,
-    #                               outprefix="tmp",
-    #                               top=10,
-    #                               Plotpdf = T,
-    #                               Writetable = T
-    # )
-    # print(res_table)
-    plot_CNV_seqment(cnv_df=data2, 
+    data2 <- data_input2()
+    plot_CNV_seqment(cnv_df=data1, 
+                     cli_df=data2,
                      sample_col=input$select132,
                      gene_col=input$select131,
                      genomic_col=input$select134,
                      cnv_type_col=input$select133,
+                     genesize= input$select136,
+                     cytobandTxtSize=input$select137,
                      outprefix="tmp",
                      top=input$select135,
                      Plotpdf = T,
                      Writetable = T
+                     
     )
     
   })
@@ -1975,14 +1978,17 @@ server <- function(input, output, session) {
     content <- function(file) {
       pdf(file , height= 8, width=8,onefile = FALSE)
       data1 <- data_input1()
-      data2 <- data1[data1$VAR_TYPE==input$selectVariantType,]
-      plot_CNV_seqment(cnv_df=data2, 
+      data2 <- data_input2()
+      plot_CNV_seqment(cnv_df=data1, 
+                       cli_df=data2,
                        sample_col=input$select132,
                        gene_col=input$select131,
                        genomic_col=input$select134,
                        cnv_type_col=input$select133,
+                       genesize= input$select136,
+                       cytobandTxtSize=input$select137,
                        outprefix="tmp",
-                       top=10,
+                       top=input$select135,
                        Plotpdf = T,
                        Writetable = F
                        
@@ -1998,16 +2004,20 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       data1 <- data_input1()
-      data2 <- data1[data1$VAR_TYPE==input$selectVariantType,]
-      res_table <-  plot_CNV_seqment(cnv_df=data2, 
-                                     sample_col=input$select132,
-                                     gene_col=input$select131,
-                                     genomic_col=input$select134,
-                                     cnv_type_col=input$select133,
-                                     outprefix="tmp",
-                                     top=10,
-                                     Plotpdf = T,
-                                     Writetable = T
+      data2 <- data_input2()
+      res_table <-   plot_CNV_seqment(cnv_df=data1, 
+                                      cli_df=data2,
+                                      sample_col=input$select132,
+                                      gene_col=input$select131,
+                                      genomic_col=input$select134,
+                                      cnv_type_col=input$select133,
+                                      genesize= input$select136,
+                                      cytobandTxtSize=input$select137,
+                                      outprefix="tmp",
+                                      top=input$select135,
+                                      Plotpdf = T,
+                                      Writetable = T
+                                      
       )
       write.xlsx(res_table,file,rowNames =F)
     })
@@ -2506,10 +2516,7 @@ server <- function(input, output, session) {
                str32,str33,str34,str35,str36,sep = '<br/>'))
   })
   
-
-  
 }
-
 
 # Run the application 
 shinyApp(ui = ui, server = server)

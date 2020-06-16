@@ -1,30 +1,38 @@
 
-plot_CNV_seqment <- function(cnv_df, sample_col,gene_col,genomic_col,cnv_type_col,outprefix,sample_num=NULL,ref.build='hg19',
-                             cytobandTxtSize=0.6,lablecut=0,top=10,y_lim=NULL,def_ystep=NULL,all_gene=FALSE,
+
+
+plot_CNV_seqment <- function(cnv_df,cli_df=NULL,sample_col,gene_col,genomic_col,cnv_type_col,outprefix,sample_num=NULL,ref.build='hg19',
+                             cytobandTxtSize=0.6,genesize= 0.6,lablecut=0,top=10,y_lim=NULL,def_ystep=NULL,all_gene=FALSE,
                              width=8,height=6,Writetable=F,Plotpdf=T){
 
   cnv_data <- cnv_df[,c(sample_col,gene_col,genomic_col,cnv_type_col)]  
   colnames(cnv_data) <- c("SMP_ID","gene","GENOMIC","CNV_type")
   cnv_data <- cnv_data[!duplicated(cnv_data[,c("SMP_ID","gene","CNV_type")]),]
   
-  
   ref_hg <- ref.build
   if(is.null(sample_num)){
     sample_num <- length(unique(cnv_data$SMP_ID))
   }
   color = c("royalblue", "maroon")
-  ###### plot segment CNV
   
+  if(!is.null(cli_df)){
+    samples <- unique(as.character(cli_df[,c(sample_col)]))
+    sample_num <- length(samples)
+    cnv_data <- cnv_data[cnv_data[,c("SMP_ID")] %in% samples,]
+  }
+
+  ###### plot segment CNV
+
   new_cnv_tmp <- tidyr::separate(cnv_data,"GENOMIC",sep=":",c("chr","position"))
   new_cnv <- tidyr::separate(new_cnv_tmp,"position",sep="-",c("chr_start","chr_end"))
   new_cnv$type <- "others"
-  has_amp <- grep("Amp",new_cnv$CNV_type)
-  has_del <- grep("Del",new_cnv$CNV_type)
+  has_amp <- grep("Ampl|ampl",new_cnv$CNV_type)
+  has_del <- grep("Dele|dele",new_cnv$CNV_type)
   if(length(has_amp)>0){
-    new_cnv[grep("Amp",new_cnv$CNV_type),]$type <- "Amp"
+    new_cnv[grep("Ampl|ampl",new_cnv$CNV_type),]$type <- "Amp"
   }
   if(length(has_del)>0){
-    new_cnv[grep("Del",new_cnv$CNV_type),]$type <- "Del"
+    new_cnv[grep("Dele|dele",new_cnv$CNV_type),]$type <- "Del"
   }
   #g[,End_Position := sapply(strsplit(x = g$loc, split = '-'), '[', 2)]
   
@@ -163,8 +171,18 @@ plot_CNV_seqment <- function(cnv_df, sample_col,gene_col,genomic_col,cnv_type_co
     if("Amp" %in% colnames(final_table)){
       amp_table <- unique(plot_table[plot_table$type=="Amp",c("chr","gene","Amp","total_start","total_end")])
       amp_table <- plyr::arrange(amp_table,Amp,decreasing=TRUE)
-      segments(x0 = amp_table$total_start, y0 = rect_dis, x1 = amp_table$total_end,
-               y1 = amp_table$Amp + rect_dis, col = color[2])
+      
+      if(dim(amp_table)[1]>top){
+        segments(x0 = amp_table[1:top,]$total_start, y0 = rect_dis, x1 = amp_table[1:top,]$total_end,
+                 y1 = amp_table[1:top,]$Amp + rect_dis, col = color[2])
+        
+      }else{
+        segments(x0 = amp_table$total_start, y0 = rect_dis, x1 = amp_table$total_end,
+                 y1 = amp_table$Amp + rect_dis, col = color[2])
+      }
+
+      #segments(x0 = amp_table$total_start, y0 = rect_dis, x1 = amp_table$total_end,
+      #         y1 = amp_table$Amp + rect_dis, col = color[2])
       tmp_table <- amp_table
       colnames(tmp_table) <- c("chr","gene","freq")
       all_gene_table <- rbind(all_gene_table,tmp_table)
@@ -175,14 +193,14 @@ plot_CNV_seqment <- function(cnv_df, sample_col,gene_col,genomic_col,cnv_type_co
           text_plot <- amp_table
         }
         wordcloud::textplot(x = text_plot$total_start, y = text_plot$Amp+text_add,
-                            words = text_plot$gene, new = FALSE, font = 3, cex = 0.6)
+                            words = text_plot$gene, new = FALSE, font = 3, cex = genesize)
         out_df <- text_plot[,c("chr","gene","Amp")]
         colnames(out_df) <- c("chr","gene","freq")
         out_table <- rbind(out_table,out_df)
       }else{
         text_plot <- amp_table[amp_table$Amp >lablecut,]
         wordcloud::textplot(x = text_plot$total_start, y = text_plot$Amp+text_add,
-                            words = text_plot$gene, new = FALSE, font = 3, cex = 0.6)  
+                            words = text_plot$gene, new = FALSE, font = 3, cex = genesize)  
         out_df <- text_plot[,c("chr","gene","Amp")]
         colnames(out_df) <- c("chr","gene","freq")
         out_table <- rbind(out_table,out_df)
@@ -191,8 +209,18 @@ plot_CNV_seqment <- function(cnv_df, sample_col,gene_col,genomic_col,cnv_type_co
     if("Del" %in% colnames(final_table)){
       del_table <- unique(plot_table[plot_table$type=="Del",c("chr","gene","Del","total_start","total_end")])
       del_table <- plyr::arrange(del_table,Del,decreasing=TRUE)
-      segments(x0 = del_table$total_start, y0 = -rect_dis, x1 = del_table$total_end,
-               y1 = - del_table$Del-rect_dis, col = color[1])
+      
+      if(dim(del_table)[1]>top){
+        segments(x0 =  del_table[1:top,]$total_start, y0 = -rect_dis, x1 =  del_table[1:top,]$total_end,
+                 y1 = -del_table[1:top,]$Del - rect_dis, col = color[1])
+      }else{
+        segments(x0 = del_table$total_start, y0 = -rect_dis, x1 = del_table$total_end,
+                 y1 = - del_table$Del-rect_dis, col = color[1])
+      }
+
+      #segments(x0 = del_table$total_start, y0 = -rect_dis, x1 = del_table$total_end,
+      #        y1 = - del_table$Del-rect_dis, col = color[1])
+
       tmp_table <- del_table
       colnames(tmp_table) <- c("chr","gene","freq")
       tmp_table$freq <- -tmp_table$freq
@@ -204,7 +232,7 @@ plot_CNV_seqment <- function(cnv_df, sample_col,gene_col,genomic_col,cnv_type_co
           text_plot <- del_table
         }
         wordcloud::textplot(x = text_plot$total_start, y = -text_plot$Del-text_add,
-                            words = text_plot$gene, new = FALSE, font = 3, cex = 0.6)
+                            words = text_plot$gene, new = FALSE, font = 3, cex = genesize)
         
         out_df <- text_plot[,c("chr","gene","Del")]
         colnames(out_df) <- c("chr","gene","freq")
@@ -216,7 +244,7 @@ plot_CNV_seqment <- function(cnv_df, sample_col,gene_col,genomic_col,cnv_type_co
         colnames(text_plot) <- c("chr","gene","freq")
         out_table <- rbind(out_table,text_plot)
         wordcloud::textplot(x = text_plot$total_start, y = -text_plot$Del-text_add,
-                            words = text_plot$gene, new = FALSE, font = 3, cex = 0.6)   
+                            words = text_plot$gene, new = FALSE, font = 3, cex = genesize)   
         out_df <- text_plot[,c("chr","gene","Del")]
         colnames(out_df) <- c("chr","gene","freq")
         out_df$freq <- - out_df$freq
