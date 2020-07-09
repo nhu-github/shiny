@@ -175,11 +175,19 @@ ui <- fluidPage(
                                                         ),
                                                         conditionalPanel("input.selectbarplot == 'YES'",
                                                                          selectInput("selectBarfeature",label= "select feature", 
-                                                                                     choices = c("TMB"))
+                                                                                     choices = c("TMB")),
+                                                                         selectInput("selectBargroupty",label= "Continuous or Discrete", 
+                                                                                     choices = c("continuous","discrete"),
+                                                                                     selected = "continuous",
+                                                                                     multiple = FALSE),
+                                                                         selectInput("selectBarbyorder",label= "Reorder the barplot", 
+                                                                                     choices=c("YES"=TRUE,"NO"=FALSE),
+                                                                                     multiple = F,
+                                                                                     selected = FALSE)
                                                         ),
                                                         sliderInput("numberbarplotcutoff", 
                                                                     label = "The value of cutoff:",
-                                                                    min = 5, max = 50, value = 12, step = 1
+                                                                    min = 5, max = 50, value = 10, step = 1
                                                         ),
  
                                                         sliderInput("numberbarplot", 
@@ -1514,75 +1522,123 @@ server <- function(input, output, session) {
   
   
   ##barplot
+  # barplotforuse <- function(){
+  #   data1 <- data_input1()
+  #   if(input$selectbarplot=="NO"){
+  #     if(input$selectbarplotyaxis=="percentage"){
+  #       res_pic <- ori_barplot(file = data1,
+  #                              id = 'ORDER_ID',
+  #                              gene = 'GENE',
+  #                              vartype = 'VAR_TYPE_SX',
+  #                              by = NULL,
+  #                              byorder = NULL,
+  #                              gs = input$numberbarplot,
+  #                              color = NULL,
+  #                              ytype = 'percentage',
+  #                              outpdf = NULL)
+  #     }else if (input$selectbarplotyaxis=="counts"){
+  #       res_pic <- ori_barplot(file = data1,
+  #                              id = 'ORDER_ID',
+  #                              gene = 'GENE',
+  #                              vartype = 'VAR_TYPE_SX',
+  #                              by = NULL,
+  #                              byorder = NULL,
+  #                              gs = input$numberbarplot,
+  #                              color = NULL,
+  #                              ytype = 'counts',
+  #                              outpdf = NULL)
+  #     }
+  #     
+  #   }else{
+  #     mut <- data1
+  #     bar <- input$selectBarfeature
+  #     mut$group <- NA
+  #     cutoff <- input$numberbarplotcutoff
+  #     mut[[bar]] <- as.numeric(mut[[bar]])
+  #     if(is.null(cutoff)){
+  #       mut$group <- ifelse(mut[[bar]]>median(mut[[bar]],na.rm = T),"High","Low")  
+  #     }else{
+  #       mut$group <- ifelse(mut[[bar]]>cutoff,"High","Low")  
+  #     }
+  #     if(input$selectbarplotyaxis=="percentage"){
+  #       res_pic <- ori_barplot(file = mut,
+  #                              id = 'ORDER_ID',
+  #                              gene = 'GENE',
+  #                              vartype = 'VAR_TYPE_SX',
+  #                              by = "group",
+  #                              byorder = NULL,
+  #                              gs = input$numberbarplot,
+  #                              color = NULL,
+  #                              ytype = 'percentage',
+  #                              outpdf = NULL)
+  #     }else if(input$selectbarplotyaxis=="counts"){
+  #       res_pic <- ori_barplot(file = mut,
+  #                              id = 'ORDER_ID',
+  #                              gene = 'GENE',
+  #                              vartype = 'VAR_TYPE_SX',
+  #                              by = "group",
+  #                              byorder = NULL,
+  #                              gs = input$numberbarplot,
+  #                              color = NULL,
+  #                              ytype = 'counts',
+  #                              outpdf = NULL)
+  #       
+  #     }
+  #     
+  #   }
+  #   print(res_pic)
+  #   
+  # }
+
   barplotforuse <- function(){
     data1 <- data_input1()
     if(input$selectbarplot=="NO"){
-      if(input$selectbarplotyaxis=="percentage"){
-        res_pic <- ori_barplot(file = data1,
-                               id = 'ORDER_ID',
-                               gene = 'GENE',
-                               vartype = 'VAR_TYPE_SX',
-                               by = NULL,
-                               byorder = NULL,
-                               gs = input$numberbarplot,
-                               color = NULL,
-                               ytype = 'percentage',
-                               outpdf = NULL)
-      }else if (input$selectbarplotyaxis=="counts"){
-        res_pic <- ori_barplot(file = data1,
-                               id = 'ORDER_ID',
-                               gene = 'GENE',
-                               vartype = 'VAR_TYPE_SX',
-                               by = NULL,
-                               byorder = NULL,
-                               gs = input$numberbarplot,
-                               color = NULL,
-                               ytype = 'counts',
-                               outpdf = NULL)
-      }
-      
+      res_pic <- ori_barplot(file = data1,
+                             id = 'ORDER_ID',
+                             gene = 'GENE',
+                             vartype = 'VAR_TYPE_SX',
+                             by = NULL,
+                             #byorder = NULL,
+                             gs = input$numberbarplot,
+                             color = NULL,
+                             ytype = input$selectbarplotyaxis,
+                             outpdf = NULL)
     }else{
+      data2 <- data_input2()
       mut <- data1
       bar <- input$selectBarfeature
-      mut$group <- NA
-      cutoff <- input$numberbarplotcutoff
-      mut[[bar]] <- as.numeric(mut[[bar]])
-      if(is.null(cutoff)){
-        mut$group <- ifelse(mut[[bar]]>median(mut[[bar]],na.rm = T),"High","Low")  
+      if(input$selectBargroupty=="continuous"){
+        mut$group <- NA
+        cutoff <- input$numberbarplotcutoff
+        mut[[bar]] <- as.numeric(mut[[bar]])
+        if(is.null(cutoff)){
+          mut$group <- ifelse(mut[[bar]]>median(mut[[bar]],na.rm = T),"High","Low")  
+        }else{
+          mut$group <- ifelse(mut[[bar]]>cutoff,"High","Low")  
+        }
       }else{
-        mut$group <- ifelse(mut[[bar]]>cutoff,"High","Low")  
+        df <- unique(data2[,c("ORDER_ID",bar)])
+        mut <- mut[,!colnames(mut) %in% bar]
+        mut <- merge(mut,df,by="ORDER_ID",all = T)
+        mut$group <- mut[[bar]]
       }
-      if(input$selectbarplotyaxis=="percentage"){
-        res_pic <- ori_barplot(file = mut,
-                               id = 'ORDER_ID',
-                               gene = 'GENE',
-                               vartype = 'VAR_TYPE_SX',
-                               by = "group",
-                               byorder = NULL,
-                               gs = input$numberbarplot,
-                               color = NULL,
-                               ytype = 'percentage',
-                               outpdf = NULL)
-      }else if(input$selectbarplotyaxis=="counts"){
-        res_pic <- ori_barplot(file = mut,
-                               id = 'ORDER_ID',
-                               gene = 'GENE',
-                               vartype = 'VAR_TYPE_SX',
-                               by = "group",
-                               byorder = NULL,
-                               gs = input$numberbarplot,
-                               color = NULL,
-                               ytype = 'counts',
-                               outpdf = NULL)
-        
-      }
+      
+      res_pic <- ori_barplot(file = mut,
+                             id = 'ORDER_ID',
+                             gene = 'GENE',
+                             vartype = 'VAR_TYPE_SX',
+                             by = "group",
+                             byorder = input$selectBarbyorder,
+                             gs = input$numberbarplot,
+                             color = NULL,
+                             ytype = input$selectbarplotyaxis,
+                             outpdf = NULL)
       
     }
     print(res_pic)
-    
   }
   
-  
+ 
   output$barplot <- renderPlot({
     barplotforuse()
     

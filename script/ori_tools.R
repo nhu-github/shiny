@@ -33,7 +33,63 @@ rmvar <- function(data, varorder){
 }
 
 ## barplot core
-ori_ggbar <- function(ggdata, x, y, group, color){
+# ori_ggbar <- function(ggdata, x, y, group, color){
+#   miny <- min(ggdata[[y]], na.rm = T)
+#   maxy <- max(ggdata[[y]], na.rm = T)
+#   if(miny >= 0 & maxy < 1){
+#     ybreak <- pretty(0:(maxy*100))/100
+#   }else if(miny >= 0 & maxy > 1){
+#     ybreak <- pretty(0:maxy)
+#   }else if(miny < 0 & miny >= -1){
+#     ybreak <- pretty((miny*100):(maxy*100))/100
+#   }else if(miny < -1 & maxy > 1){
+#     ybreak <- pretty(miny:maxy)
+#   }
+#   legendrow <- ceiling(length(levels(ggdata[[group]]))/3)
+# 
+#   p <- ggplot(ggdata, aes_string(x, y))
+#   p <- p + geom_bar(aes_string(fill = group), stat = 'identity',
+#                     position = position_stack(), width = 0.5)
+#   p <- p + scale_fill_manual(values = color)
+#   p <- p + scale_y_continuous(breaks = ybreak, labels = abs(ybreak))
+#   p <- p + guides(fill = guide_legend(nrow = legendrow, byrow = T))
+#   if(maxy > 1) p <- p + labs(y = 'Counts')
+#   if(maxy <= 1) p <- p + labs(y = 'Percentage (%)')
+#   p <- p + theme_bw()
+#   p <- p + theme(
+#     axis.title.x = element_blank(),
+#     axis.title.y = element_text(size = 8, face = 'bold', color = 'black'),
+#     axis.text.y = element_text(size = 8, face = 'bold', color = 'black'),
+#     axis.text.x = element_text(size = 8, face = 'bold', color = 'black',
+#                                angle = 60, hjust = 1,
+#                                margin = margin(2, 0, -4, 0)),
+#                                #hjust = 1, vjust = 0.5),
+#     plot.title = element_blank(),
+#     panel.grid = element_blank(),
+#     panel.border = element_blank(),
+#     axis.ticks = element_blank(),
+#     legend.position = 'bottom',
+#     legend.title = element_text(size = 7, face = 'bold', color = 'black'),
+#     legend.text = element_text(size = 7, face = 'bold', color = 'black'),
+#     legend.key.size = unit(0.5, 'line')
+#   )
+#   if(miny < 0){
+#     p <- p + geom_hline(yintercept = 0, color = 'white', size = 0.3)
+#     p <- p + theme(
+#       axis.line.y = element_line(color='black', size = 0.3),
+#       axis.ticks.y = element_line(color='black', size = 0.3))
+#   }else{
+#     p <- p + theme(
+#       axis.line = element_line(color='black', size = 0.3),
+#       axis.ticks = element_line(color='black', size = 0.3))
+#   }
+# 
+#   return(p)
+# }
+
+## barplot core v2
+
+ori_ggbar <- function(ggdata, x, y, group, color,ytype){
   miny <- min(ggdata[[y]], na.rm = T)
   maxy <- max(ggdata[[y]], na.rm = T)
   if(miny >= 0 & maxy < 1){
@@ -45,16 +101,20 @@ ori_ggbar <- function(ggdata, x, y, group, color){
   }else if(miny < -1 & maxy > 1){
     ybreak <- pretty(miny:maxy)
   }
-  legendrow <- ceiling(length(levels(ggdata[[group]]))/3)
-
+  #legendrow <- ceiling(length(levels(ggdata[[group]]))/3)
+  legendrow <- 1
   p <- ggplot(ggdata, aes_string(x, y))
   p <- p + geom_bar(aes_string(fill = group), stat = 'identity',
                     position = position_stack(), width = 0.5)
   p <- p + scale_fill_manual(values = color)
   p <- p + scale_y_continuous(breaks = ybreak, labels = abs(ybreak))
   p <- p + guides(fill = guide_legend(nrow = legendrow, byrow = T))
-  if(maxy > 1) p <- p + labs(y = 'Counts')
-  if(maxy <= 1) p <- p + labs(y = 'Percentage (%)')
+  
+  #if(maxy > 1) p <- p + labs(y = 'Counts')
+  #if(maxy <= 1) p <- p + labs(y = 'Percentage (%)')
+  if(ytype =='counts') p <- p + labs(y = 'Counts')
+  if(ytype == 'percentage') p <- p + labs(y = 'Percentage (%)')
+  
   p <- p + theme_bw()
   p <- p + theme(
     axis.title.x = element_blank(),
@@ -63,7 +123,7 @@ ori_ggbar <- function(ggdata, x, y, group, color){
     axis.text.x = element_text(size = 8, face = 'bold', color = 'black',
                                angle = 60, hjust = 1,
                                margin = margin(2, 0, -4, 0)),
-                               #hjust = 1, vjust = 0.5),
+    #hjust = 1, vjust = 0.5),
     plot.title = element_blank(),
     panel.grid = element_blank(),
     panel.border = element_blank(),
@@ -83,9 +143,46 @@ ori_ggbar <- function(ggdata, x, y, group, color){
       axis.line = element_line(color='black', size = 0.3),
       axis.ticks = element_line(color='black', size = 0.3))
   }
-
   return(p)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## profiling
 ori_coreoncoprint <- function(mx,

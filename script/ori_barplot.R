@@ -21,39 +21,149 @@ NULL
 #'
 #' @export
 
+#############################
+#
+# ====v1====
+#
+############################
+##
+#' ori_barplot <- function(file,
+#'                     id = 'ORDER_ID',
+#'                     gene = 'GENE',
+#'                     vartype = 'VarType',
+#'                     varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 'Gene Amplification', 'Gene Homozygous Deletion', 'Truncation'),
+#'                     by = NULL,
+#'                     byorder = NULL,
+#'                     gs = 20,
+#'                     color = NULL,
+#'                     ytype = 'percentage',
+#'                     outpdf = NULL
+#'                     ){
+#'   if(is.null(color)){
+#'     color <- c("Fusion/Rearrangement" = "#EEEE00",      ##yellow
+#'              "Substitution/Indel" = "#228B22",      ##green
+#'              "Gene Amplification" = "#EE0000",        ##red
+#'              "Gene Homozygous Deletion" = "#0000EE",  ##blue
+#'              "Truncation" = "#8E388E")                ##purple
+#'              #'Splicing' = '#B2DF8A')
+#'   }
+#'   if(length(setdiff(varorder, names(color)) > 0)){
+#'     stop('Please check variant type or specify color argument(color)')
+#'   }
+#' 
+#'   oridata <- CountVariants(xlsxfile = file, id = id, gene = gene,
+#'                         vartype = vartype, by = by, outxlsx = 'list')
+#'   if(is.null(byorder)) byorder <- names(oridata)[2:length(oridata)]
+#' 
+#'   # plot bar
+#'   topdata <- function(cvlist, gkeep = gs){
+#'     #cvlist, statistical table by CountVariants.R
+#'     pfre <- cvlist[[1]]
+#' 
+#'     if(is.numeric(gs)){
+#'       gkeep <- pfre[[1]][1:gs]
+#'     }else if(is.vector(gs)){
+#'       gkeep <- gs
+#'     }else{
+#'       gkeep <- pfre[[1]][1:gs]
+#'     }
+#' 
+#'     pdata <- cvlist[[2]]
+#' 
+#'     if(ytype == 'percentage'){
+#'       pdata <- pdata[,grepl('gene$|%$', colnames(pdata), ignore.case = T)]
+#'       colnames(pdata) <- gsub('%$', '', colnames(pdata))
+#'       pdata[,2:ncol(pdata)] <- sapply(pdata[,2:ncol(pdata)], function(x){x/100})
+#'     }else if(ytype == 'counts'){
+#'       pdata <- pdata[,!(grepl('%$', colnames(pdata)))]
+#'     }
+#'     pdata <- pdata[pdata[[1]] %in% gkeep,]
+#'     pdata[['Gene']] <- factor(pdata[['Gene']], levels = gkeep)
+#'     pdata <- tidyr::gather(pdata, key = 'Variants', value = 'y', -1)
+#'     pdata[['Variants']] <- factor(pdata[['Variants']], levels = names(color))
+#'     return(pdata)
+#'   }
+#' 
+#'   if(is.null(by)){
+#'     pdata <- topdata(oridata)
+#'     ggcolor <- color[names(color) %in% unique(pdata[[2]])]
+#'     p <- ori_ggbar(pdata, 'Gene', 'y', 'Variants', ggcolor)
+#'     if(!(is.null(outpdf))){
+#'       ggsave(plot = p, filename = outpdf, height = 4, width = 6)
+#'     }
+#'   }else{
+#'     #
+#'     pdata.whole <- topdata(oridata[[1]])
+#'     ggcolor <- color[names(color) %in% unique(pdata.whole[[2]])]
+#'     p.whole <- ori_ggbar(pdata.whole, 'Gene', 'y', 'Variants', ggcolor)
+#' 
+#'     #bar by group
+#'     pdata.g1 <- topdata(oridata[[byorder[1]]], pdata.whole[['Gene']])
+#'     pdata.g2 <- topdata(oridata[[byorder[2]]], pdata.whole[['Gene']])
+#'     pdata.g2[['y']] <- -1*pdata.g2[['y']]
+#'     pdata.g <- rbind(pdata.g1, pdata.g2)
+#'     p <- ori_ggbar(pdata.g, 'Gene', 'y', 'Variants', ggcolor)
+#' 
+#'     p <- ggpubr::ggarrange(p.whole, p, nrow = 2, legend = 'bottom', common.legend = T)
+#'     if(!(is.null(outpdf))){
+#'       ggsave(plot = p, filename = outpdf, height = 9, width = 6)
+#'     }
+#'   }
+#'   return(p)
+#' }
+
+
+########################
+#
+# =====V2=====
+#
+#######################
+# add annotation,split two figure,change y lab text of percent 
+
 ori_barplot <- function(file,
-                    id = 'ORDER_ID',
-                    gene = 'GENE',
-                    vartype = 'VarType',
-                    varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 'Gene Amplification', 'Gene Homozygous Deletion', 'Truncation'),
-                    by = NULL,
-                    byorder = NULL,
-                    gs = 20,
-                    color = NULL,
-                    ytype = 'percentage',
-                    outpdf = NULL
-                    ){
+                        id = 'ORDER_ID',
+                        gene = 'GENE',
+                        vartype = 'VarType',
+                        varorder = c('Fusion/Rearrangement', 'Substitution/Indel', 'Gene Amplification', 'Gene Homozygous Deletion', 'Truncation'),
+                        by = NULL,
+                        byorder = F,
+                        gs = 20,
+                        color = NULL,
+                        ytype = 'percentage',
+                        outpdf = NULL
+){
   if(is.null(color)){
     color <- c("Fusion/Rearrangement" = "#EEEE00",      ##yellow
-             "Substitution/Indel" = "#228B22",      ##green
-             "Gene Amplification" = "#EE0000",        ##red
-             "Gene Homozygous Deletion" = "#0000EE",  ##blue
-             "Truncation" = "#8E388E")                ##purple
-             #'Splicing' = '#B2DF8A')
+               "Substitution/Indel" = "#228B22",      ##green
+               "Gene Amplification" = "#EE0000",        ##red
+               "Gene Homozygous Deletion" = "#0000EE",  ##blue
+               "Truncation" = "#8E388E")                ##purple
+    #'Splicing' = '#B2DF8A')
   }
   if(length(setdiff(varorder, names(color)) > 0)){
     stop('Please check variant type or specify color argument(color)')
   }
+  
 
   oridata <- CountVariants(xlsxfile = file, id = id, gene = gene,
-                        vartype = vartype, by = by, outxlsx = 'list')
-  if(is.null(byorder)) byorder <- names(oridata)[2:length(oridata)]
-
+                           vartype = vartype, by = by, outxlsx = 'list')
+ # if(is.null(byorder)) byorder <- names(oridata)[2:length(oridata)]
+  if(byorder){
+    byorder <- names(oridata)[2:length(oridata)]
+  }else{
+    byorder <- names(oridata)[length(oridata):2]
+  }
+  
   # plot bar
   topdata <- function(cvlist, gkeep = gs){
     #cvlist, statistical table by CountVariants.R
+    
+    ############
+    #cvlist <- oridata[[1]]
+    ############
+    
     pfre <- cvlist[[1]]
-
+    
     if(is.numeric(gs)){
       gkeep <- pfre[[1]][1:gs]
     }else if(is.vector(gs)){
@@ -61,13 +171,14 @@ ori_barplot <- function(file,
     }else{
       gkeep <- pfre[[1]][1:gs]
     }
-
+    
     pdata <- cvlist[[2]]
-
+    
     if(ytype == 'percentage'){
       pdata <- pdata[,grepl('gene$|%$', colnames(pdata), ignore.case = T)]
       colnames(pdata) <- gsub('%$', '', colnames(pdata))
-      pdata[,2:ncol(pdata)] <- sapply(pdata[,2:ncol(pdata)], function(x){x/100})
+      #pdata[,2:ncol(pdata)] <- sapply(pdata[,2:ncol(pdata)], function(x){x/100})
+      #pdata[,2:ncol(pdata)] <- sapply(pdata[,2:ncol(pdata)], function(x){x})
     }else if(ytype == 'counts'){
       pdata <- pdata[,!(grepl('%$', colnames(pdata)))]
     }
@@ -77,11 +188,11 @@ ori_barplot <- function(file,
     pdata[['Variants']] <- factor(pdata[['Variants']], levels = names(color))
     return(pdata)
   }
-
+  
   if(is.null(by)){
     pdata <- topdata(oridata)
     ggcolor <- color[names(color) %in% unique(pdata[[2]])]
-    p <- ori_ggbar(pdata, 'Gene', 'y', 'Variants', ggcolor)
+    p <- ori_ggbar(pdata, 'Gene', 'y', 'Variants', ggcolor,ytype)
     if(!(is.null(outpdf))){
       ggsave(plot = p, filename = outpdf, height = 4, width = 6)
     }
@@ -89,19 +200,23 @@ ori_barplot <- function(file,
     #
     pdata.whole <- topdata(oridata[[1]])
     ggcolor <- color[names(color) %in% unique(pdata.whole[[2]])]
-    p.whole <- ori_ggbar(pdata.whole, 'Gene', 'y', 'Variants', ggcolor)
-
+    
+    p.whole <- ori_ggbar(pdata.whole, 'Gene', 'y', 'Variants', ggcolor,ytype)
+    
     #bar by group
     pdata.g1 <- topdata(oridata[[byorder[1]]], pdata.whole[['Gene']])
     pdata.g2 <- topdata(oridata[[byorder[2]]], pdata.whole[['Gene']])
     pdata.g2[['y']] <- -1*pdata.g2[['y']]
     pdata.g <- rbind(pdata.g1, pdata.g2)
-    p <- ori_ggbar(pdata.g, 'Gene', 'y', 'Variants', ggcolor)
-
-    p <- ggpubr::ggarrange(p.whole, p, nrow = 2, legend = 'bottom', common.legend = T)
+    p <- ori_ggbar(pdata.g, 'Gene', 'y', 'Variants', ggcolor,ytype)
+    #p <- ggpubr::ggarrange(p.whole, p, nrow = 2, legend = 'bottom', common.legend = T)
+    p <- p + annotate("text", x=length(unique(pdata.g$Gene))/2 , y=max(pdata.g1$y)*0.8 ,label=byorder[1],size = 6, face = 'bold', color = 'black')+
+      annotate("text", x=length(unique(pdata.g$Gene))/2 , y=(max(abs(pdata.g2$y)))* -0.8 ,label=byorder[2],size = 6, face = 'bold', color = 'black')
+    
     if(!(is.null(outpdf))){
       ggsave(plot = p, filename = outpdf, height = 9, width = 6)
     }
   }
   return(p)
 }
+
