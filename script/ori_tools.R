@@ -91,14 +91,15 @@ rmvar <- function(data, varorder){
 
 ori_ggbar <- function(ggdata, x, y, group, color,ytype){
   miny <- min(ggdata[[y]], na.rm = T)
-  maxy <- max(ggdata[[y]], na.rm = T)
-  if(miny >= 0 & maxy < 1){
+  #maxy <- max(ggdata[[y]], na.rm = T)
+  maxy <- max(unlist(lapply(split(ggdata,ggdata[[x]]), function(x){sum(as.numeric(x[,3]))})),na.rm = T)
+  if(miny >= 0 & maxy <= 1){
     ybreak <- pretty(0:(maxy*100))/100
-  }else if(miny >= 0 & maxy > 1){
+  }else if(miny >= 0 & maxy >= 1){
     ybreak <- pretty(0:maxy)
   }else if(miny < 0 & miny >= -1){
     ybreak <- pretty((miny*100):(maxy*100))/100
-  }else if(miny < -1 & maxy > 1){
+  }else if(miny < -1 & maxy >= 1){
     ybreak <- pretty(miny:maxy)
   }
   #legendrow <- ceiling(length(levels(ggdata[[group]]))/3)
