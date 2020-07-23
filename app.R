@@ -38,6 +38,7 @@ source("./script/ori_scattercor_plot.R")
 source("./script/ori_heatmap.R")
 source("./script/CIBERSORT.R")
 source("./script/ori_tcgaCompare.R")
+source("./script/chr_change.R")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -454,7 +455,7 @@ ui <- fluidPage(
                                    # CNV
                                    conditionalPanel("input.cPanels1 == 13",
                                                     wellPanel(
-                                                      h4(strong("Driver gene plot")),
+                                                      h4(strong("Circos")),
                                                       selectInput("selectVariantType", "Select variant type",
                                                                   choices=c("CNV"),
                                                                   selected =c("CNV"),
@@ -529,7 +530,63 @@ ui <- fluidPage(
                                                       downloadButton('DownloadTMBcomparetable', 'Download TMBcompare table')
                                                     )),
                                    
+                                   
+                                   # chr change 
+                                   conditionalPanel("input.cPanels1 == 15",
+                                                    wellPanel(
+                                                      h4(strong("The frequencies of CNV of chromosomal changes")),
+                                                      
+                                                      selectInput("selectexpand", "Change the x-axis range", 
+                                                                  choices = c("NO" = "NO","YES"="YES")
+                                                      ),
+                                                      conditionalPanel("input.selectexpand == 'YES'",
+                                                                       sliderInput("selectexpandnumber", 
+                                                                                   label = "Expand the range in the horizontal direction",
+                                                                                   min = 1, max = 10, value = 2, step = 1
+                                                                       )
+                                                      ),
 
+                                                      sliderInput("selectNN", 
+                                                                  label = "Threshold for mutant genes",
+                                                                  min = 1, max = 30, value = 2, step = 1
+                                                      ),
+                                                      sliderInput("selectmergenamesbin", 
+                                                                  label = "The bin of merge gene names",
+                                                                  min = 0, max = 100, value = 15, step = 5
+                                                      ),
+                                                      sliderInput("selectsplitnames", 
+                                                                  label = "The number of genenames as one line",
+                                                                  min = 0, max = 10, value = 4, step = 1
+                                                      ),
+                                                      sliderInput("selectgenenamessize", 
+                                                                  label = "The size of genenames",
+                                                                  min = 0, max = 2, value = 0.6, step =0.1
+                                                      ),
+                                                      
+                                                      sliderInput("selectfreqsize", 
+                                                                  label = "The size of frequency",
+                                                                  min = 0, max = 2, value = 0.8, step = 0.1
+                                                      ),
+                                                      # sliderInput("selectpdfwidth", 
+                                                      #             label = "The width of pdf",
+                                                      #             min = 0, max = 15, value = 7.5, step = 0.5
+                                                      # ),
+                                                      # sliderInput("selectpdfheight", 
+                                                      #             label = "The height of pdf",
+                                                      #             min = 0, max = 15, value = 10, step = 0.5
+                                                      # ),
+                                                      
+                                                    )),
+                                   conditionalPanel("input.cPanels1 == 15",
+                                                    h4(strong("Download")),
+                                                    wellPanel(
+                                                      textInput("fnamechrchange", "filename", value = "chromosomal_changes"),
+                                                      downloadButton('Downloadchrplot', 'Download chr change plot'),
+                                                      br(),
+                                                      br(),
+                                                      downloadButton('Downloadchrtable', 'Download chr change table')
+                                                    )),
+          
                             ),
                                    
                                   
@@ -549,6 +606,7 @@ ui <- fluidPage(
                                        tabPanel("Circos", htmlOutput("pv121"), plotOutput("circosplot",height= 1200, width = 1200), value = 12),
                                        tabPanel("CNV", htmlOutput("pv131"), plotOutput("CNVplot",height= 800, width = 1000), htmlOutput("pv132"), DT::dataTableOutput("CNVtable",width = 800), value =13),
                                        tabPanel("TMBcompare", htmlOutput("pvsession222"), plotOutput("TMBcompareplot", height= 800, width = 1000),DT::dataTableOutput("TMBcomparetable",width = 800), value = 14),
+                                       tabPanel("chr_changes", htmlOutput("pvsession223"), plotOutput("chrplot", height= 1000, width = 750),DT::dataTableOutput("chrtable",width = 800), value = 15),
                                        id = "cPanels1"
                                    )                
                                    
@@ -655,10 +713,6 @@ ui <- fluidPage(
                                                     textInput("fnamegggforest", "filename", value = "ggforest"),
                                                     downloadButton('Downloadggforest', 'Download ggforest')
                                                   )),
-
-
-
-
 
                           ),
 
@@ -2073,7 +2127,6 @@ server <- function(input, output, session) {
                                       top=input$select135,
                                       Plotpdf = T,
                                       Writetable = T
-                                      
       )
       write.xlsx(res_table,file,rowNames =F)
     })
@@ -2129,7 +2182,93 @@ server <- function(input, output, session) {
       write.xlsx(res_table,file,rowNames =F)
     })
   
+  # chr change
+  chrplotforuse1 <- function(){
+    data1 <- data_input1()
+    if(input$selectexpand=="NO"){
+      chromosomal_changes(data1,NN=input$selectNN,mergenamesbin=input$selectmergenamesbin,
+                          splitnames=input$selectsplitnames,
+                          expand=NULL,pdfnames="chromosomal_changes",
+                          pdfoutput= F,tableoutput=F,
+                          pdfwidth=input$selectpdfwidth,
+                          pdfheight=input$selectpdfheight,
+                          genenamessize=input$selectgenenamessize,
+                          freqsize=input$selectfreqsize
+      )
+    }else{
+      chromosomal_changes(data1,NN=input$selectNN,mergenamesbin=input$selectmergenamesbin,
+                          splitnames=input$selectsplitnames,
+                          expand=input$selectexpandnumber,
+                          pdfnames="chromosomal_changes",
+                          pdfoutput= F,tableoutput=F,
+                          pdfwidth=input$selectpdfwidth,
+                          pdfheight=input$selectpdfheight,
+                          genenamessize=input$selectgenenamessize,
+                          freqsize=input$selectfreqsize
+      )
+    }
+  }
   
+  chrplotforuse2 <- function(){
+    data1 <- data_input1()
+    if(input$selectexpand=="NO"){
+      chromosomal_changes(data1,NN=input$selectNN,mergenamesbin=input$selectmergenamesbin,
+                          splitnames=input$selectsplitnames,
+                          expand=NULL,pdfnames="chromosomal_changes",
+                          pdfoutput= F,tableoutput=T,
+                          pdfwidth=input$selectpdfwidth,
+                          pdfheight=input$selectpdfheight,
+                          genenamessize=input$selectgenenamessize,
+                          freqsize=input$selectfreqsize
+      )
+    }else{
+      chromosomal_changes(data1,NN=input$selectNN,mergenamesbin=input$selectmergenamesbin,
+                          splitnames=input$selectsplitnames,
+                          expand=input$selectexpandnumber,
+                          pdfnames="chromosomal_changes",
+                          pdfoutput= F,tableoutput=T,
+                          pdfwidth=input$selectpdfwidth,
+                          pdfheight=input$selectpdfheight,
+                          genenamessize=input$selectgenenamessize,
+                          freqsize=input$selectfreqsize
+      )
+    }
+    
+  }
+
+  output$chrplot <- renderPlot({
+    chrplotforuse1()
+  })
+  
+  
+  output$chrtable <-renderDataTable({
+    chrplotforuse2()
+  })
+  
+  output$Downloadchrplot <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnamechrchange)
+      paste(pdf_file,'.pdf', sep='')
+    },
+    content <- function(file) {
+      pdf(file , height= 10, width=7.5,onefile = FALSE)
+      chrplotforuse1()
+      dev.off()
+      #file.copy(paste(pdf_file,'.pdf', sep='') ,file, overwrite=TRUE)
+    },contentType = 'image/pdf')
+  
+  output$Downloadchrtable <- downloadHandler(
+    filename <- function() {
+      pdf_file <<- as.character(input$fnamechrchange)
+      paste(pdf_file,'.xlsx', sep='')
+    },
+    content <- function(file) {
+      data1 <- data_input1()
+      res_table <-  chrplotforuse2()
+      write.xlsx(res_table,file,rowNames =F)
+    })
+  
+
   #survival
   survivalforuse <- function(){
     data4 <- data_input4()
@@ -2154,7 +2293,6 @@ server <- function(input, output, session) {
     }
     print(res_pic)
   }
-  
   
   output$survivalplot <- renderPlot({
     survivalforuse()
@@ -2496,10 +2634,11 @@ server <- function(input, output, session) {
     str312 <- paste("&emsp;11. Circos &emsp; 可以选择在Circos上展示的mutation type，可以单独选择一种或两种，在这里默认的是展示snv，cnv，fusion三种")
     str313 <- paste("&emsp;12. CNV &emsp; 展示CNV Amp和Del在染色体上突变情况和突变高频基因，图和表可分别下载。")
     str314 <- paste("&emsp;13. TMBcompare &emsp;与TCGA cohort的TMB进行比较，可以调整cohort在图中展示的名字以及颜色，图和表可分别下载")
-    
+    str315 <- paste("&emsp;14. chr changes &emsp;染色体上CNV的改变频率，蓝色表示CNV发生在奇数染色体上（chr1,3,5...），红色表示在CNV发生在偶数染色体上（chr2,4,6...）
+                    ,图和表可分别下载")
     
     HTML(paste(str00,h5(strong(str0)), str1, str2, str3,str00,h5(strong(str21)),str22,str23,str24,str00,h5(strong(str31)),
-         str32,str33,str34,str35,str36,str37,str38,str39,str310,str311,str312,str313,str314,sep = '<br/>'))
+         str32,str33,str34,str35,str36,str37,str38,str39,str310,str311,str312,str313,str314,str315,sep = '<br/>'))
   })
   
   output$ReadMe2 <- renderUI({
