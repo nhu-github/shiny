@@ -141,6 +141,7 @@ ori_boxplot <- function(x, y, xtype, input, cli, ftype="boxplot", cutoff=65, out
       datfra <- data.frame(t(input[c(x,y),]))
       datfra$type[datfra[[x]]==1] = "MT"
       datfra$type[datfra[[x]]==0] = "WT"
+      datfra$type <- factor(datfra$type,levels = c("MT","WT"))
     }else{
       datfra0 <-  unique(input[, c("ORDER_ID", "GENE")])
       datfra <- unique(cli[, c("ORDER_ID", y)])
@@ -148,6 +149,7 @@ ori_boxplot <- function(x, y, xtype, input, cli, ftype="boxplot", cutoff=65, out
       WTsample <- unique(datfra0[["ORDER_ID"]][!datfra0[["ORDER_ID"]] %in% MTsample])
       datfra$type[datfra$ORDER_ID %in% MTsample ] = "MT"
       datfra$type[datfra$ORDER_ID %in% WTsample]  = "WT"
+      datfra$type <- factor(datfra$type,levels = c("MT","WT"))
       datfra[[y]] <- as.numeric(datfra[[y]])
       datfra <-datfra[!is.na(datfra[[y]]),]
     }
